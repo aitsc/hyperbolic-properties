@@ -204,3 +204,6 @@ tmp/
 # 不排除的文件夹
 !.idea/
 !.settings/
+# 两个测试代码的文件, 测试af和ak
+!ac_test[.]pkl
+!aj_wordnet[.]mammal;1;*

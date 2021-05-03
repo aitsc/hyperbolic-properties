@@ -10,5 +10,5 @@ pandas~=1.0.1
 tinydb~=4.4.0
 colorama~=0.4.3
 pydot-ng~=2.0.0
-tanshicheng==0.3
+tanshicheng~=0.3
 pygraphviz~=1.6

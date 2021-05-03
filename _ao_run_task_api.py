@@ -5,6 +5,7 @@ import os
 from pprint import pprint, pformat
 import time
 import shutil
+import sys
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
 
@@ -98,10 +99,14 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
 
 if __name__ == '__main__':
     url = 'http://10.10.1.101:38000/api'
+    try:  # 可通过输入参数修改路径
+        db_dir = sys.argv[1]
+    except:
+        db_dir = 'ao_result'
     if TaskDBapi.request_api({}, url=url, try_times=3):
         run_task_train(
             dataset_db_path='al_all_data',
-            db_dir='ao_result',
+            db_dir=db_dir,
             db_api='am_all_train',
             url=url,
         )

@@ -124,6 +124,7 @@
 *.xmi
 *.log
 *.jiami
+*.err
 
 # 排除其他文件(夹)名
 test*

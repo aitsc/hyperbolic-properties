@@ -23,7 +23,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
     all_time = time.time()
     完成任务 = 1
     api写入任务 = 0
-    response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url, db_dir=db_dir)
+    response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url)
     while 'task' in response and response['task']:
         paras = response['task']['paras']
         # 增加数据集db位置
@@ -92,7 +92,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
         logger.critical(out)
         完成任务 += 1
         print()
-        response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url, db_dir=db_dir)
+        response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url)
     print(f'总耗时: {(time.time() - all_time) / 3600}h; 最后一次 response:')
     pprint(response)
 

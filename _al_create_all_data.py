@@ -1,7 +1,6 @@
 from _ac_data_helper import *
 from _af_train import metrics_to_results
-from tanshicheng import TaskDB, Draw
-from tinydb import where
+from tanshicheng import TaskDB, Draw, where
 
 
 class 数据生成任务(TaskDB):

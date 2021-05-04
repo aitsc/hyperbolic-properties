@@ -2,12 +2,12 @@ from _am_create_all_train import *
 from tanshicheng import Draw
 from scipy import stats
 
-数据生成任务_obj = 数据生成任务('al_all_data/db.json')
-训练生成任务_obj = 训练生成任务('am_all_train/db.json')
+数据生成任务_obj = 数据生成任务('al_all_data')
+训练生成任务_obj = 训练生成任务('am_all_train')
 
 
 def 获得训练任务结果(query, 训练生成任务_obj=训练生成任务_obj, 数据生成任务_obj=数据生成任务_obj):
-    paras_L, 初始参数D = 穷举构建简单任务方法(query, 数据生成任务_obj, {})[0:2]
+    paras_L, 初始参数D = 穷举构建简单任务方法(query, 数据生成任务_obj, {}, 训练生成任务_obj)[0:2]
     if len(paras_L) > 1:
         print('发现参数数量 =', len(paras_L), '; query =', query)
         tasks = []
@@ -24,10 +24,11 @@ def 获得训练任务结果(query, 训练生成任务_obj=训练生成任务_ob
     )
 
 
-def decoder_radar(best_result=('metric', 'dev')):
+def decoder_radar(best_result=('metric', 'dev'), no=1):
     """
     6个雷达图: (4任务*5指标)*3E流形*2维度*GCN*Animal
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -47,13 +48,14 @@ def decoder_radar(best_result=('metric', 'dev')):
             sub_title = f'({i * c + j + 1}): {Manifold.s_to_tex(layerManifold)}, dim={dim}'
             draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i * c + j + 1,
                            radii=(0.2, 0.4, 0.6, 0.8), set_legend='best')
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def encoder_radar(best_result=('metric', 'dev')):
+def encoder_radar(best_result=('metric', 'dev'), no=1):
     """
     6个雷达图: (3方法*5指标)*3E流形*2维度*LP*Animal + comb方法, 欧式二维绘图结果
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -83,13 +85,14 @@ def encoder_radar(best_result=('metric', 'dev')):
             sub_title = f'({i * c + j + 1}): {Manifold.s_to_tex(layerManifold)}, dim={dim}'
             draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i * c + j + 1,
                            radii=(0.2, 0.4, 0.6, 0.8), set_legend='best')
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def hierarchical_structure_3d(best_result=('metric', 'dev')):
+def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
     """
     6个三维透视图: 36双指标可变树*6指标*二维*GCN*Poincare*LP
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -123,13 +126,14 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
         draw.add_3d(xyz_L, xyz_scatter=xyz_scatter[:len(tasks_no_surf) + 1], x_multiple=5, y_multiple=5,
                     scatter_labels=scatter_labels[:len(tasks_no_surf) + 1], interp_kind='linear',
                     xlabel='$I_B$', ylabel='$I_D$', zlabel='', sub_title=sub_title, n=i + 1)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def hierarchical_structure_radar(best_result=('metric', 'dev')):
+def hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
     """
     2个雷达图: (4可变树+2固定树+4可变图)*(comb结果+3E流形)*2维度*GCN*LP*M5
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -168,13 +172,14 @@ def hierarchical_structure_radar(best_result=('metric', 'dev')):
         sub_title = f'({i + 1}): dim={dim}'
         draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i + 1,
                        radii=(0.2, 0.4, 0.6, 0.8), set_legend=(0.95, .9), title_pad=20)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def act_loss_heatmap(best_result=('metric', 'dev')):
+def act_loss_heatmap(best_result=('metric', 'dev'), no=1):
     """
     4个数字热力图: (3D流形*2维度)*(3E流形*3A流形)*4指标*GCN*Animal*LP
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -201,13 +206,14 @@ def act_loss_heatmap(best_result=('metric', 'dev')):
                 yticks.append(f'E:{Manifold.s_to_tex(E)},A:{Manifold.s_to_tex(A)}')
         sub_title = f'({i0 + 1}): {指标}'
         draw.add_heatmap(mat, xticks, yticks, sub_title=sub_title, n=i0 + 1, x_rotation=90, mat_text=2)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def hierarchical_performance_line(best_result=('metric', 'dev')):
+def hierarchical_performance_line(best_result=('metric', 'dev'), no=1):
     """
     8个折线图: (4结合方式+不结合)*(4指标+1metric)*4任务*2公开树*Hyperboloid*GCN*二维
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -241,13 +247,14 @@ def hierarchical_performance_line(best_result=('metric', 'dev')):
             draw.add_line([1, 2, 3, 4, 5], xticks, xaxis='Hybrid training method', y_left=y_left, yaxis_left='M',
                           y_right=[y_right], yaxis_right=f'{yaxis_right_L[j]} (test set performance)',
                           ylabel_right=[yaxis_right_L[j]], ylabel_left=ylabel_left, title=sub_title, n=j * c + i + 1)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def hierarchical_performance_heatmap(best_result=('metric', 'dev')):
+def hierarchical_performance_heatmap(best_result=('metric', 'dev'), no=1):
     """
     2个热力图: 7指标*(3metrics*4任务)*2公开树*Hyperboloid*GCN*二维
     :param best_result: None or ('metrics/loss', 'test/dev/train'); None表示全取
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -287,13 +294,14 @@ def hierarchical_performance_heatmap(best_result=('metric', 'dev')):
                 mat.append([stats.spearmanr(metrics[:, i1], performance[:, k])[0] for i1 in range(len(xticks))])
         sub_title = f'({i + 1}): {Manifold.s_to_tex(layerManifold)}, dataset={tree_name_L[i]}'
         draw.add_heatmap(mat, xticks, yticks, sub_title=sub_title, n=i + 1, x_rotation=90, mat_text=2)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
-def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
+def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
     """
     8个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*2维度*LP*GCN
     :param best_result: ('metrics/loss', 'test/dev/train')
+    :param no: int; 序号
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
@@ -330,15 +338,24 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
             sub_title = f'({i * c + j + 1}): {Manifold.s_to_tex(layerManifold)}, {指标}, dim={dim}'
             draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i * c + j + 1,
                            radii=(0.2, 0.4, 0.6, 0.8), set_legend=(0.95, .9), title_pad=20)
-    draw.draw(f'an_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
 if __name__ == '__main__':
-    decoder_radar()
-    encoder_radar()
-    hierarchical_structure_3d()
-    hierarchical_structure_radar()
-    act_loss_heatmap()
-    hierarchical_performance_line()
-    hierarchical_performance_heatmap()
-    multi_hierarchical_structure_radar()
+    best_result = ('loss', 'dev')
+    no = 1
+    decoder_radar(best_result, no)
+    no += 1
+    encoder_radar(best_result, no)
+    no += 1
+    hierarchical_structure_3d(best_result, no)
+    no += 1
+    hierarchical_structure_radar(best_result, no)
+    no += 1
+    act_loss_heatmap(best_result, no)
+    no += 1
+    hierarchical_performance_line(best_result, no)
+    no += 1
+    hierarchical_performance_heatmap(best_result, no)
+    no += 1
+    multi_hierarchical_structure_radar(best_result, no)

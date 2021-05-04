@@ -1,8 +1,7 @@
 from _al_create_all_data import 数据生成任务
 from _af_train import *
 from _ak_sala2018comb import *
-from tanshicheng import TaskDB, get_logger
-from tinydb import where
+from tanshicheng import TaskDB, get_logger, where
 from pprint import pformat
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
@@ -195,7 +194,7 @@ class 训练生成任务(TaskDB):
         print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self._db_tasks.all()) - len(tasks))
 
 
-def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_re_D, 允许重复mark=True, 训练生成任务_obj: 训练生成任务 = None):
+def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_re_D, 训练生成任务_obj: 训练生成任务, 允许重复mark=True):
     """
     :param 初始参数D: dict;
     :param obj: 数据生成任务

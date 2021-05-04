@@ -213,6 +213,7 @@ class 数据生成任务(TaskDB):
             draw.add_3d(xyz_L=xyz_L, xyz_scatter=xyz_scatter, scatter_labels=scatter_labels, interp_kind='linear',
                         xlabel='IB', ylabel='ID', zlabel=zlabel, n=n + 1)
         draw.draw(f'{self.db_dir}/IB_ID_3d.pdf')
+        self.output_table()
 
 
 def 构建数据任务(obj: 数据生成任务):
@@ -377,24 +378,28 @@ if __name__ == '__main__':
     if 构建新任务:
         print('构建新任务:')
         obj = 数据生成任务(路径, new=True)
+        info_L = []
         for paras_L in 构建数据任务(obj):
             for paras in paras_L:
                 if 'RG_L' in paras['in'] and paras['in']['RG_L']:
                     priority = 0
                 else:
                     priority = 1
-                obj.add_task(paras, priority=priority)
+                info_L.append({'paras': paras, 'priority': priority})
+        print('一共增加任务数:', len(obj.add_tasks(info_L)))
     else:
         obj = 数据生成任务(路径)
         if 重构可变树:
             print('重构可变树:')
             obj.del_task({'paras': {'mark': ['t6']}})
+            info_L = []
             for paras in 构建数据任务(obj)[4]:
                 if 'RG_L' in paras['in'] and paras['in']['RG_L']:
                     priority = 0
                 else:
                     priority = 1
-                obj.add_task(paras, priority=priority)
+                info_L.append({'paras': paras, 'priority': priority})
+            print('一共重构任务数:', len(obj.add_tasks(info_L)))
     obj.clean()
     obj.run_task()
     print('=' * 10, '统计结果:')

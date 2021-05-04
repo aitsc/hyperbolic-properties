@@ -192,6 +192,7 @@ class 训练生成任务(TaskDB):
         print('已完成任务:')
         pprint(tasks)
         print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self._db_tasks.all()) - len(tasks))
+        self.output_table()
 
 
 def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_re_D, 训练生成任务_obj: 训练生成任务, 允许重复mark=True):
@@ -394,9 +395,11 @@ if __name__ == '__main__':
     if 构建新任务:
         print('构建新任务:')
         obj = 训练生成任务(路径, new=True)
+        info_L = []
         for paras_L in 构训练任务(obj, 数据生成任务_obj):
             for paras in paras_L:
-                obj.add_task(paras)
+                info_L.append({'paras': paras})
+        print('一共增加任务数:', len(obj.add_tasks(info_L)))
     else:
         obj = 训练生成任务(路径)
         if 重新构建未完成任务:
@@ -404,13 +407,15 @@ if __name__ == '__main__':
             obj.clean()
             print('删除未完成任务数量:', len(obj.del_task({'executed': False})))
             更新任务 = 1
+            info_L = []
             for paras_L in 构训练任务(obj, 数据生成任务_obj):
                 for paras in paras_L:
                     tasks = obj.que_task({'paras': {'mark': paras['mark']}})
                     if len(tasks) == 0:
-                        obj.add_task(paras)
+                        info_L.append({'paras': paras})
                         print(f'增加了{更新任务}个任务, mark:', paras['mark'])
                         更新任务 += 1
+            print('一共更新任务数:', len(obj.add_tasks(info_L)))
     obj.clean()
     obj.run_task(dataset_db_path=数据生成任务_obj.db_dir)
     print('=' * 10, '统计结果:')

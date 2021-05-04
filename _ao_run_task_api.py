@@ -103,17 +103,21 @@ if __name__ == '__main__':
         db_dir = sys.argv[1]
     except:
         db_dir = 'ao_result'
+    db_api = 'am_all_train'
     if TaskDBapi.request_api({}, url=url, try_times=3):
         run_task_train(
             dataset_db_path='al_all_data',
             db_dir=db_dir,
-            db_api='am_all_train',
+            db_api=db_api,
             url=url,
         )
     else:
         print('\n启动服务端:')
         TaskDBapi.app_run(
-            db_dirs=['am_all_train'],
+            db_dirs=[db_api],
             port=19999,
             log_path=f'log/TaskDBapi.app_run.log',
         )
+        obj = TaskDB(db_api)
+        obj.output_table()
+        obj.close()

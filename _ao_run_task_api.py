@@ -10,7 +10,7 @@ import sys
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
 
 
-def run_task_train(dataset_db_path, db_dir, db_api, url):
+def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None):
     """
     通过api运行任务
     :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
@@ -18,6 +18,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
         没有会自动生成, 如果新生成的子文件夹也存在会被删除
     :param db_api: 访问 api 的哪个数据库
     :param url: str; 获取数据的api接口
+    :param memory_limit: int or float or None; 最大显存限制, 单位MB, None表示不限制. 过大可能导致 out of memory 报错
     :return:
     """
     all_time = time.time()
@@ -59,7 +60,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
         else:
             paras['trainParas']['ap'] = folder_name  # 这个导致返回参数会用到 db_dir
             try:
-                result = main_api(**paras)
+                result = main_api(memory_limit=memory_limit, **paras)
             except:
                 logger.error('尝试使用cpu运行 main_api', exc_info=True)
                 with tf.device('/cpu:0'):
@@ -98,18 +99,25 @@ def run_task_train(dataset_db_path, db_dir, db_api, url):
 
 
 if __name__ == '__main__':
-    url = 'http://10.10.1.101:38000/api'
+    url = 'http://10.10.1.101:38000'
+    db_api = 'am_all_train'
+
     try:  # 可通过输入参数修改路径
         db_dir = sys.argv[1]
     except:
-        db_dir = 'ao_result'
-    db_api = 'am_all_train'
+        db_dir = 'ao_1'
+    try:  # 第二个参数是显存限制
+        memory_limit = float(sys.argv[2])
+    except:
+        memory_limit = None
+
     if TaskDBapi.request_api({}, url=url, try_times=3):
         run_task_train(
             dataset_db_path='al_all_data',
             db_dir=db_dir,
             db_api=db_api,
             url=url,
+            memory_limit=memory_limit,
         )
     else:
         print('\n启动服务端:')

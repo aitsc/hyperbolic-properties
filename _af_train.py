@@ -455,7 +455,16 @@ def getPreEncoder(encoder: Encoder, dataHelper: MixedDataset, mainPath: str, tra
         NameError(f'mixedType 错误! mixedType={mixedType}')
 
 
-def main_api(trainParas=None, dataParas=None, decoderParas=None, encoderParas=None, **kwargs):
+def main_api(trainParas=None, dataParas=None, decoderParas=None, encoderParas=None, memory_limit=None, **kwargs):
+    """
+    :param trainParas:
+    :param dataParas:
+    :param decoderParas:
+    :param encoderParas:
+    :param memory_limit: int or float or None; 最大显存限制, 单位MB, None表示不限制. 过大可能导致 out of memory 报错
+    :param kwargs:
+    :return:
+    """
     # 普通参数
     trainParas_ = {
         # 使用的任务
@@ -597,6 +606,19 @@ def main_api(trainParas=None, dataParas=None, decoderParas=None, encoderParas=No
     if not os.path.exists(trainParas['ap']):
         os.makedirs(trainParas['ap'])
 
+    # 显存限制
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus and memory_limit:
+        # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
+        try:
+            tf.config.experimental.set_virtual_device_configuration(
+                gpus[0],
+                [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=memory_limit)])
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+            print(f"显存限制({memory_limit}MB):", len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Virtual devices must be set before GPUs have been initialized
+            print(e)
     # 数据和encoder
     data = DataHelper(load_file=trainParas['dh_path']).data  # 数据集模型
     encoder = Encoder(data['feat_oh'].shape[0], data['feat_oh'].shape[1], **encoderParas)

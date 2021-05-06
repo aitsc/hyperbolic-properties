@@ -10,7 +10,7 @@ import sys
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
 
 
-def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None):
+def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, query='None'):
     """
     通过api运行任务
     :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
@@ -19,12 +19,14 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None):
     :param db_api: 访问 api 的哪个数据库
     :param url: str; 获取数据的api接口
     :param memory_limit: int or float or None; 最大显存限制, 单位MB, None表示不限制. 过大可能导致 out of memory 报错
+    :param query: str; 用于过滤request任务
     :return:
     """
     all_time = time.time()
     完成任务 = 1
     api写入任务 = 0
-    response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url)
+    request_f = lambda: TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api, 'query': query}, url=url)
+    response = request_f()
     while 'task' in response and response['task']:
         paras = response['task']['paras']
         # 增加数据集db位置
@@ -93,7 +95,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None):
         logger.critical(out)
         完成任务 += 1
         print()
-        response = TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api}, url=url)
+        response = request_f()
     print(f'总耗时: {(time.time() - all_time) / 3600}h; 最后一次 response:')
     pprint(response)
 
@@ -110,6 +112,10 @@ if __name__ == '__main__':
         memory_limit = float(sys.argv[2])
     except:
         memory_limit = None
+    try:  # 第二个参数是查询获取任务
+        query = sys.argv[3]
+    except:
+        query = 'None'
 
     if TaskDBapi.request_api({}, url=url, try_times=3):
         run_task_train(
@@ -118,6 +124,7 @@ if __name__ == '__main__':
             db_api=db_api,
             url=url,
             memory_limit=memory_limit,
+            query=query,
         )
     else:
         print('\n启动服务端:')

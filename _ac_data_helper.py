@@ -27,6 +27,8 @@ class DataHelper:
                 '点编号_树D': data['点编号_树D'],
                 'feats': data['feats'] if 'feats' in data else None,
             }
+            if 'short_path_matrix' in data and data['short_path_matrix'] is not None:
+                self.data['short_path_matrix'] = data['short_path_matrix']
         elif load_file:
             self.读取数据(load_file)
         else:
@@ -178,6 +180,7 @@ class DataHelper:
         else:
             if 强制计算图失真:
                 # 计算多源最短路径
+                print('计算多源最短路径...')
                 short_path_matrix = multi_source_shortest_path(nodes, edges)
                 self.data['short_path_matrix'] = short_path_matrix
             else:

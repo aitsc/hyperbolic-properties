@@ -36,7 +36,7 @@ class 训练生成任务(TaskDB):
                     'pictureFromat': 'pdf',  # 所有静态图片的格式, eps会导致gif不清晰但空间小, pdf会无法生成gif
                     'epochs': 300,  # 最多训练多少轮
                     'epoch_out': 5,  # 多少轮评估一次
-                    'tiems_eval_draw': 6,  # 评估多少次进行一次可视化绘图
+                    'tiems_eval_draw': 10,  # 评估多少次进行一次可视化绘图
                     'stop_strategy': {
                         'devLossStop': 0,  # 至少多少轮dev数据集的loss不再降低就跳出训练
                         'devMetricStop': 0,  # epochs至少多少次后数据集的对应指标不再降低就跳出训练

@@ -2,7 +2,7 @@ from _am_create_all_train import *
 from tanshicheng import Draw
 from scipy import stats
 
-数据生成任务_obj = 数据生成任务('al_all_data_copy')
+数据生成任务_obj = 数据生成任务('al_all_data')
 训练生成任务_obj = 训练生成任务('am_all_train')
 
 

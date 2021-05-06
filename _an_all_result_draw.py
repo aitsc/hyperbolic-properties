@@ -12,10 +12,10 @@ def 获得训练任务结果(query, 训练生成任务_obj=训练生成任务_ob
         print('发现参数数量 =', len(paras_L), '; query =', query)
         tasks = []
         for paras in paras_L:
-            tasks += 训练生成任务_obj.que_task({'paras': {'mark': paras['mark']}})
+            tasks += 训练生成任务_obj.que_tasks({'paras': {'mark': paras['mark']}})
         print('获得任务数量:', len(tasks))
     else:
-        tasks = 训练生成任务_obj.que_task({'paras': {'mark': paras_L[0]['mark']}})
+        tasks = 训练生成任务_obj.que_tasks({'paras': {'mark': paras_L[0]['mark']}})
     return (
         tasks[0],  # 第一个任务
         tasks[0]['paras']['encoderParas']['manifold'],  # 第一个任务 encoder 输出的流形
@@ -342,7 +342,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
 
 
 if __name__ == '__main__':
-    best_result = ('loss', 'dev')
+    best_result = ('loss', 'train')
     no = 1
     decoder_radar(best_result, no)
     no += 1

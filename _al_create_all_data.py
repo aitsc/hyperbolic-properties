@@ -1,6 +1,6 @@
 from _ac_data_helper import *
 from _af_train import metrics_to_results
-from tanshicheng import TaskDB, Draw, where
+from tanshicheng import TaskDB, Draw
 
 
 class 数据生成任务(TaskDB):
@@ -48,8 +48,8 @@ class 数据生成任务(TaskDB):
         })
         return result
 
-    def run_task(self):
-        tasks = self.get_uncomplete_tasks()
+    def run_tasks(self):
+        tasks = self.uncomplete_tasks
         tasks_mix = []
         完成任务 = 0
         while len(tasks) != 0 or len(tasks_mix) != 0:
@@ -66,7 +66,7 @@ class 数据生成任务(TaskDB):
                     continue
                 else:  # 修改 RG_L 参数为实例随机图, 如果缺失所有图会报错, 部分图不会报错
                     RG_L = []
-                    for i in self.que_task({'paras': {'mixed_tree': [paras['in']['RG_L']]}}):
+                    for i in self.que_tasks({'paras': {'mixed_tree': [paras['in']['RG_L']]}}):
                         RG_L.append(随机图(f"{self.db_dir}/{i['data_path']['RG']}"))
                         mixed_tree_order.append(i['no'])
                     paras['in']['RG_L'] = RG_L
@@ -118,7 +118,7 @@ class 数据生成任务(TaskDB):
             # 写入数据
             RG.保存到文件(f"{self.db_dir}/{result['data_path']['RG']}")
             dataHelper.保存数据(f"{self.db_dir}/{result['data_path']['dh']}")
-            self.update_one(result, task['no'])
+            self.update_task(result, task['no'])
             完成任务 += 1
             print('=' * 20, '本次任务结果:')
             pprint(result)
@@ -126,11 +126,11 @@ class 数据生成任务(TaskDB):
             print()
 
     def 统计结果(self):
-        tasks = self._db_tasks.search(where('executed') == True)
-        print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self._db_tasks.all()) - len(tasks), '; 已完成任务:')
+        tasks = self.que_tasks({'executed': True})
+        print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self.tasks) - len(tasks), '; 已完成任务:')
         pprint(tasks)
         # 绘制 不平衡程度 和 层次度分布的偏移度 的散点图
-        tasks = self.que_task({'graph_info': {'nx图节点数量': 0}})
+        tasks = self.que_tasks({'graph_info': {'nx图节点数量': 0}})
         describe_info = []  # [(描述,IB,ID,αr,αt,βμs,βμe),..]
         for task in tasks:
             if len(task['graph_info']['每棵树层次度分布的偏移度']) == len(task['graph_info']['每棵树不平衡程度']) == 1:
@@ -390,8 +390,8 @@ if __name__ == '__main__':
     else:
         obj = 数据生成任务(路径)
         if 重构可变树:
-            print('重构可变树:')
-            obj.del_task({'paras': {'mark': ['t6']}})
+            print('重构可变树...')
+            obj.del_tasks({'paras': {'mark': ['t6']}})
             info_L = []
             for paras in 构建数据任务(obj)[4]:
                 if 'RG_L' in paras['in'] and paras['in']['RG_L']:
@@ -401,7 +401,7 @@ if __name__ == '__main__':
                 info_L.append({'paras': paras, 'priority': priority})
             print('一共重构任务数:', len(obj.add_tasks(info_L)))
     obj.clean()
-    obj.run_task()
+    obj.run_tasks()
     print('=' * 10, '统计结果:')
     obj.统计结果()
     obj.close()

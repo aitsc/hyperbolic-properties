@@ -1,7 +1,7 @@
 from _al_create_all_data import 数据生成任务
 from _af_train import *
 from _ak_sala2018comb import *
-from tanshicheng import TaskDB, get_logger, where
+from tanshicheng import TaskDB, get_logger
 from pprint import pformat
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
@@ -34,9 +34,9 @@ class 训练生成任务(TaskDB):
                     'ap': 'self._dir/am_graph/',  # 图片等等输出的主目录, 这个变量在run_task时自动生成
                     'dh_path': 'ac_test.pkl',  # DataHelper 的 load_file 数据路径, 运行时需要 dataset_db_path
                     'pictureFromat': 'pdf',  # 所有静态图片的格式, eps会导致gif不清晰但空间小, pdf会无法生成gif
-                    'epochs': 600,  # 最多训练多少轮
-                    'epoch_out': 10,  # 多少轮评估一次
-                    'tiems_eval_draw': 10,  # 评估多少次进行一次可视化绘图
+                    'epochs': 300,  # 最多训练多少轮
+                    'epoch_out': 5,  # 多少轮评估一次
+                    'tiems_eval_draw': 6,  # 评估多少次进行一次可视化绘图
                     'stop_strategy': {
                         'devLossStop': 0,  # 至少多少轮dev数据集的loss不再降低就跳出训练
                         'devMetricStop': 0,  # epochs至少多少次后数据集的对应指标不再降低就跳出训练
@@ -113,13 +113,13 @@ class 训练生成任务(TaskDB):
         })
         return result
 
-    def run_task(self, dataset_db_path):
+    def run_tasks(self, dataset_db_path):
         """
         运行任务
         :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
         :return:
         """
-        tasks = self.get_uncomplete_tasks()
+        tasks = self.uncomplete_tasks
         完成任务 = 1
         while len(tasks) != 0:
             task = tasks.pop(0)
@@ -180,7 +180,7 @@ class 训练生成任务(TaskDB):
                             pformat(result['graph_info']) + '\nbest_result:\n' +
                             pformat(result['result_all']['best_result']))
             # 更新任务
-            self.update_one(result, task['no'])
+            self.update_task(result, task['no'])
             print('=' * 20, '本次任务结果:')
             pprint(result)
             print('=' * 20, f'已完成第{完成任务}个任务, 剩余{len(tasks)}个, 本次耗时{(time.time() - time_start) / 60}分钟.')
@@ -188,10 +188,10 @@ class 训练生成任务(TaskDB):
             print()
 
     def 统计结果(self):
-        tasks = self._db_tasks.search(where('executed') == True)
+        tasks = self.que_tasks({'executed': True})
         print('已完成任务:')
         pprint(tasks)
-        print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self._db_tasks.all()) - len(tasks))
+        print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self.tasks) - len(tasks))
         self.output_table()
 
 
@@ -218,7 +218,7 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
     }
     初始参数D_.update(初始参数D)
     paras_f = lambda: 训练生成任务_obj.result['paras']  # 获取参数模版的方法
-    from_mark_get_result_f = lambda mark: sum([obj.que_task({'paras': {'mark': i}}) for i in mark], [])
+    from_mark_get_result_f = lambda mark: sum([obj.que_tasks({'paras': {'mark': i}}) for i in mark], [])
     初始参数D_['data_result'] = from_mark_get_result_f(初始参数D_['data_result'])
 
     def 构建简单任务(dh_L, layer, layerManifold, actM_L, manifold, dim, mixedType, dtype, task_weight, data_result):
@@ -305,11 +305,16 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
 
     paras_L_L = []
     mark_re_D = {}
+
+    open_mark = [['o2'], ['o3']]
+    all_dim = [2, 4, 6, 8, 10, 12, 14, 16]
+
     # 6个雷达图: (4任务*6指标)*3E流形*2维度*GCN*Animal
     paras_L_L.append(穷举构建简单任务方法({
         'dh_L': [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']],
         'layerManifold': [0, 1, 2],
-        'dim': [2, 16],
+        'dim': all_dim,
+        'data_result': open_mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 6个雷达图: (3方法*6指标)*3E流形*2维度*LP*Animal + 庞加莱comb方法, 欧式二维绘图结果
@@ -317,67 +322,73 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['mlp', 'gcn', 'gat'],
         'layerManifold': [0, 1, 2],
-        'dim': [2, 16],
+        'dim': all_dim,
+        'data_result': open_mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
         'dtype': [32, 64, 128, 512, 3000],
-        'dim': [2, 16],
+        'data_result': open_mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 6个三维透视图: (双指标可变树+2固定树)*6指标*二维*GCN*Poincare*LP
     paras_L_L.append(穷举构建简单任务方法({
         'data_result': [['t6']],
+        'dim': all_dim,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 2个雷达图: (4可变树+2固定树+4可变图)*(comb结果+3E流形)*2维度*GCN*LP
     mark = [['t1'], ['t2'], ['t3'], ['t4'], ['o2'], ['o3'], ['g1'], ['g2'], ['g3'], ['g4']]
     paras_L_L.append(穷举构建简单任务方法({
         'layerManifold': [0, 1, 2],
-        'dim': [2, 16],
+        'dim': all_dim,
         'data_result': mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
         'dtype': [3000],
-        'dim': [2, 16],
         'data_result': mark[:-4],
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 4个数字热力图: (3E流形*3A流形*3D流形)*2维度*4指标*GCN*Animal*LP
-    paras_L_L.append(穷举构建简单任务方法({
-        'manifold': [0, 1, 2],
-        'layerManifold': [0, 1, 2],
-        'actM_L': [0, 1, 2],
-        'dim': [2, 16],
-    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-
-    # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN*二维
-    # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN*二维
-    mark = [['o2'], ['o3']]
-    paras_L_L.append(穷举构建简单任务方法({
-        'manifold': [1],
-        'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
-                 ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
-        'mixedType': [0, 1, 2, 3, 9],
-        'task_weight': [0.9],
-        'data_result': mark,
-    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # # 4个数字热力图: (3E流形*3A流形*3D流形)*2维度*4指标*GCN*Animal*LP
+    # paras_L_L.append(穷举构建简单任务方法({
+    #     'manifold': [0, 1, 2],
+    #     'layerManifold': [0, 1, 2],
+    #     'actM_L': [0, 1, 2],
+    #     'dim': all_dim,
+    #     'data_result': open_mark,
+    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    #
+    # # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN*二维
+    # # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN*二维
+    # paras_L_L.append(穷举构建简单任务方法({
+    #     'manifold': [1],
+    #     'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
+    #              ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
+    #     'mixedType': [0, 1, 2, 3, 9],
+    #     'task_weight': [0.9],
+    #     'dim': all_dim,
+    #     'data_result': open_mark,
+    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 8个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*2维度*LP*GCN
     mark = [['t5'], ['t5.1.1'], ['t5.1.2'], ['t5.1.3'], ['t5.1.4'], ['t5.2.1'], ['t5.2.2'], ['t5.2.3'], ['t5.2.4']]
     paras_L_L.append(穷举构建简单任务方法({
         'layerManifold': [2],
-        'dim': [2, 16],
+        'dim': all_dim,
         'data_result': mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
         'dtype': [3000],
-        'dim': [2, 16],
         'data_result': mark[1:],
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
+    总构建数量 = []
+    for paras_L in paras_L_L:
+        总构建数量.append(len(paras_L))
+    print('每个paras_L构建数量:', 总构建数量)
+    print('总构建数量:', sum(总构建数量))
     return paras_L_L
 
 
@@ -403,21 +414,24 @@ if __name__ == '__main__':
     else:
         obj = 训练生成任务(路径)
         if 重新构建未完成任务:
-            print('重新构建未完成任务:')
+            print('重新构建未完成任务...')
             obj.clean()
-            print('删除未完成任务数量:', len(obj.del_task({'executed': False})))
+            print('删除未完成任务数量:', len(obj.del_tasks({'executed': False})))
             更新任务 = 1
             info_L = []
             for paras_L in 构训练任务(obj, 数据生成任务_obj):
                 for paras in paras_L:
-                    tasks = obj.que_task({'paras': {'mark': paras['mark']}})
+                    tasks = obj.que_tasks({'paras': {'mark': paras['mark']}})
                     if len(tasks) == 0:
                         info_L.append({'paras': paras})
-                        print(f'增加了{更新任务}个任务, mark:', paras['mark'])
+                        print(f'准备增加第{更新任务}个任务, mark:', paras['mark'])
                         更新任务 += 1
-            print('一共更新任务数:', len(obj.add_tasks(info_L)))
+                    else:
+                        print(f'跳过已完成任务, mark:', paras['mark'])
+            print('一共更新任务数:')
+            print(len(obj.add_tasks(info_L)))
     obj.clean()
-    obj.run_task(dataset_db_path=数据生成任务_obj.db_dir)
+    obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir)
     print('=' * 10, '统计结果:')
     obj.统计结果()
     obj.close()

@@ -1,4 +1,4 @@
-from _al_create_all_data import 数据生成任务
+from _al_create_all_data import 数据生成任务, mongo_url
 from _af_train import *
 from _ak_sala2018comb import *
 from tanshicheng import TaskDB, get_logger
@@ -180,7 +180,7 @@ class 训练生成任务(TaskDB):
                             pformat(result['graph_info']) + '\nbest_result:\n' +
                             pformat(result['result_all']['best_result']))
             # 更新任务
-            self.update_task(result, task['no'])
+            self.update_tasks([result], [task['no']])
             print('=' * 20, '本次任务结果:')
             pprint(result)
             print('=' * 20, f'已完成第{完成任务}个任务, 剩余{len(tasks)}个, 本次耗时{(time.time() - time_start) / 60}分钟.')
@@ -193,6 +193,21 @@ class 训练生成任务(TaskDB):
         pprint(tasks)
         print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self.tasks) - len(tasks))
         self.output_table()
+
+
+mark_index_D = {
+    'dh': 0,  # db_L
+    'l': 1,  # layer
+    'E': 2,  # layerManifold
+    'A': 3,  # actM_L
+    'D': 4,  # manifold
+    'd': 5,  # dim
+    'mt': 6,  # mixedType
+    'dt': 7,  # dtype
+    'tw': 8,  # task_weight
+    'ds': 9,  # data_result
+    're': 10,
+}
 
 
 def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_re_D, 训练生成任务_obj: 训练生成任务, 允许重复mark=True):
@@ -246,7 +261,7 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
             layerManifold = manifold
         if actM_L is None:
             actM_L = layerManifold
-        # 构建mark
+        # 构建mark, 位置与 mark_index_D 对应
         paras = paras_f()
         paras['mark'] = [dh_L[0], layer, f'E{layerManifold}', f'A{actM_L}', f'D{manifold}', f'd{dim}',
                          f'mt{mixedType}', f'dt{dtype}', f'tw{task_weight}',
@@ -350,26 +365,26 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'data_result': mark[:-4],
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # # 4个数字热力图: (3E流形*3A流形*3D流形)*2维度*4指标*GCN*Animal*LP
-    # paras_L_L.append(穷举构建简单任务方法({
-    #     'manifold': [0, 1, 2],
-    #     'layerManifold': [0, 1, 2],
-    #     'actM_L': [0, 1, 2],
-    #     'dim': all_dim,
-    #     'data_result': open_mark,
-    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-    #
-    # # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN*二维
-    # # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN*二维
-    # paras_L_L.append(穷举构建简单任务方法({
-    #     'manifold': [1],
-    #     'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
-    #              ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
-    #     'mixedType': [0, 1, 2, 3, 9],
-    #     'task_weight': [0.9],
-    #     'dim': all_dim,
-    #     'data_result': open_mark,
-    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # 4个数字热力图: (3E流形*3A流形*3D流形)*2维度*4指标*GCN*Animal*LP
+    paras_L_L.append(穷举构建简单任务方法({
+        'manifold': [0, 1, 2],
+        'layerManifold': [0, 1, 2],
+        'actM_L': [0, 1, 2],
+        'dim': all_dim,
+        'data_result': open_mark,
+    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+
+    # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN*二维
+    # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN*二维
+    paras_L_L.append(穷举构建简单任务方法({
+        'manifold': [1],
+        'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
+                 ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
+        'mixedType': [0, 1, 2, 3, 9],
+        'task_weight': [0.9],
+        'dim': all_dim,
+        'data_result': open_mark,
+    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 8个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*2维度*LP*GCN
     mark = [['t5'], ['t5.1.1'], ['t5.1.2'], ['t5.1.3'], ['t5.1.4'], ['t5.2.1'], ['t5.2.2'], ['t5.2.3'], ['t5.2.4']]
@@ -405,30 +420,26 @@ if __name__ == '__main__':
         构建新任务 = True
     if 构建新任务:
         print('构建新任务:')
-        obj = 训练生成任务(路径, new=True)
-        info_L = []
-        for paras_L in 构训练任务(obj, 数据生成任务_obj):
-            for paras in paras_L:
-                info_L.append({'paras': paras})
-        print('一共增加任务数:', len(obj.add_tasks(info_L)))
+        obj = 训练生成任务(路径, new=True, mongo_url=mongo_url, mongo_db='aa_hyperbolic', mongo_co='aa_train')
+        print('一共增加任务数:')
+        print(len(obj.add_tasks(sum(构训练任务(obj, 数据生成任务_obj), []))))
     else:
-        obj = 训练生成任务(路径)
+        obj = 训练生成任务(路径, mongo_url=mongo_url)
         if 重新构建未完成任务:
             print('重新构建未完成任务...')
-            obj.clean()
-            print('删除未完成任务数量:', len(obj.del_tasks({'executed': False})))
+            print('删除未完成任务数量:', obj.del_tasks({'executed': False}))
             更新任务 = 1
             info_L = []
             for paras_L in 构训练任务(obj, 数据生成任务_obj):
                 for paras in paras_L:
                     tasks = obj.que_tasks({'paras': {'mark': paras['mark']}})
                     if len(tasks) == 0:
-                        info_L.append({'paras': paras})
-                        print(f'准备增加第{更新任务}个任务, mark:', paras['mark'])
+                        info_L.append(paras)
+                        print(f'\n准备增加第{更新任务}个任务, mark:', paras['mark'], end='')
                         更新任务 += 1
                     else:
-                        print(f'跳过已完成任务, mark:', paras['mark'])
-            print('一共更新任务数:')
+                        print('.', end='')
+            print('\n一共更新任务数:')
             print(len(obj.add_tasks(info_L)))
     obj.clean()
     obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir)

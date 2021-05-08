@@ -6,6 +6,7 @@ from pprint import pprint, pformat
 import time
 import shutil
 import sys
+from _al_create_all_data import mongo_url
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
 
@@ -104,15 +105,15 @@ if __name__ == '__main__':
     url = 'http://10.10.1.101:38000'
     db_api = 'am_all_train'
 
-    try:  # 可通过输入参数修改路径
+    try:  # 第1个参数修改数据保存路径
         db_dir = sys.argv[1]
     except:
         db_dir = 'ao_1'
-    try:  # 第二个参数是显存限制
+    try:  # 第2个参数是显存限制
         memory_limit = float(sys.argv[2])
     except:
         memory_limit = None
-    try:  # 第二个参数是查询获取任务
+    try:  # 第3个参数是用查询过滤获取任务
         query = sys.argv[3]
     except:
         query = 'None'
@@ -132,7 +133,11 @@ if __name__ == '__main__':
             db_dirs=[db_api],
             port=19999,
             log_path=f'log/TaskDBapi.app_run.log',
+            mongo_url=mongo_url,
         )
-        obj = TaskDB(db_api)
-        obj.output_table()
+        obj = TaskDB(db_api, mongo_url=mongo_url)
+        print('output_table...')
+        obj.output_table(query={'executed': True})
+        # print('mongo_to_tiny...')
+        # obj.mongo_to_tiny()
         obj.close()

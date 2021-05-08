@@ -2,8 +2,8 @@ from _am_create_all_train import *
 from tanshicheng import Draw
 from scipy import stats
 
-数据生成任务_obj = 数据生成任务('al_all_data_copy')
-训练生成任务_obj = 训练生成任务('am_all_train')
+数据生成任务_obj = 数据生成任务('al_all_data')
+训练生成任务_obj = 训练生成任务('am_all_train', mongo_url=mongo_url)
 
 
 def 获得训练任务结果(query, 训练生成任务_obj=训练生成任务_obj, 数据生成任务_obj=数据生成任务_obj):
@@ -78,7 +78,7 @@ def encoder_radar(best_result=('metric', 'dev'), no=1):
                 line_data.append([指标D[x_label][0] for x_label in x_labels])
                 line_labels.append('Draw')
             if layerManifold == 2:  # comb方法
-                指标D = 获得训练任务结果({'layer': ['comb'], 'dim': [dim], 'dtype': [3000]}
+                指标D = 获得训练任务结果({'layer': ['comb'], 'dim': [2], 'dtype': [3000]}
                                )[0]['result_all']['epoch']['0']['to_m']['2']
                 line_data.append([指标D[x_label][0] for x_label in x_labels])
                 line_labels.append('Comb')
@@ -109,7 +109,7 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
     tasks_no_surf = []
     # tasks_no_surf = [获得训练任务结果(query_f([[i]]))[0] for i in ['t1', 't2', 't3', 't4']]
     scatter_labels = ['Trees', 'Tree1', 'Tree2', 'Tree3', 'Tree4']
-    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M5', 'M7']):
+    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M6', 'M7']):
         xyz_L = []
         xyz_scatter = [xyz_L, [], [], [], []]
         for j, task in enumerate(tasks_no_surf + tasks):
@@ -154,15 +154,17 @@ def hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
                 layerManifold = 2
                 dtype = 3000
                 line_labels.append('Comb')
+                dim_ = 2  # comb 只需要2维
             else:
                 layer = 'gcn'
                 dtype = 32
                 line_labels.append(Manifold.s_to_tex(layerManifold))
+                dim_ = dim
             for k, data in enumerate(['t1', 't2', 't3', 't4', 'o2', 'o3', 'g1', 'g2', 'g3', 'g4']):
                 if layer == 'comb' and k > 5:  # comb 方法没有图
                     line_data[j].append(0)
                     continue
-                task = 获得训练任务结果(query_f([data], layerManifold, dim, layer, dtype))[0]
+                task = 获得训练任务结果(query_f([data], layerManifold, dim_, layer, dtype))[0]
                 try:
                     best_epoch = task['result_all']['best_result'][best_result[0]][best_result[1]]['epoch']
                     指标D = task['result_all']['epoch'][str(best_epoch)]['to_m'][str(layerManifold)]
@@ -319,7 +321,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
     for j, dim in enumerate([2, 16]):
         task_mix = 获得训练任务结果(query_f(['t5'], dim))[0]  # 多树混合图流形结果
         task_sub_L = [获得训练任务结果(query_f(i1, dim))[0] for i1 in sub_trees]  # 子树流形结果
-        task_sub_comb_L = [获得训练任务结果(query_f(i1, dim, 'comb', 3000))[0] for i1 in sub_trees]  # 子树comb结果
+        task_sub_comb_L = [获得训练任务结果(query_f(i1, 2, 'comb', 3000))[0] for i1 in sub_trees]  # 子树comb结果
         for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4']):
             line_data = [[], [], []]  # 每个线的数据
             line_labels = ['Comb', 'Mix-tree', 'Sub-tree']  # 每个线的名称, 注意顺序

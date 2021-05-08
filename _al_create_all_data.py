@@ -2,6 +2,8 @@ from _ac_data_helper import *
 from _af_train import metrics_to_results
 from tanshicheng import TaskDB, Draw
 
+mongo_url = 'mongodb://tsc:tanshicheng123@127.0.0.1:27017/'
+
 
 class 数据生成任务(TaskDB):
     @property
@@ -118,7 +120,7 @@ class 数据生成任务(TaskDB):
             # 写入数据
             RG.保存到文件(f"{self.db_dir}/{result['data_path']['RG']}")
             dataHelper.保存数据(f"{self.db_dir}/{result['data_path']['dh']}")
-            self.update_task(result, task['no'])
+            self.update_tasks([result], [task['no']])
             完成任务 += 1
             print('=' * 20, '本次任务结果:')
             pprint(result)
@@ -379,27 +381,30 @@ if __name__ == '__main__':
         print('构建新任务:')
         obj = 数据生成任务(路径, new=True)
         info_L = []
+        priority_L = []
         for paras_L in 构建数据任务(obj):
             for paras in paras_L:
                 if 'RG_L' in paras['in'] and paras['in']['RG_L']:
                     priority = 0
                 else:
                     priority = 1
-                info_L.append({'paras': paras, 'priority': priority})
-        print('一共增加任务数:', len(obj.add_tasks(info_L)))
+                info_L.append(paras)
+                priority_L.append(priority)
+        print('一共增加任务数:', len(obj.add_tasks(info_L, priority_L=priority_L)))
     else:
         obj = 数据生成任务(路径)
         if 重构可变树:
-            print('重构可变树...')
-            obj.del_tasks({'paras': {'mark': ['t6']}})
+            print('重构可变树...', obj.del_tasks({'paras': {'mark': ['t6']}}))
             info_L = []
+            priority_L = []
             for paras in 构建数据任务(obj)[4]:
                 if 'RG_L' in paras['in'] and paras['in']['RG_L']:
                     priority = 0
                 else:
                     priority = 1
-                info_L.append({'paras': paras, 'priority': priority})
-            print('一共重构任务数:', len(obj.add_tasks(info_L)))
+                info_L.append(paras)
+                priority_L.append(priority)
+            print('一共重构任务数:', len(obj.add_tasks(info_L, priority_L=priority_L)))
     obj.clean()
     obj.run_tasks()
     print('=' * 10, '统计结果:')

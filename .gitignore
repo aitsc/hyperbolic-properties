@@ -142,6 +142,7 @@ dist/
 out/
 Payload/
 tmp/
+[a-z][a-z]_*/
 
 # 不排除的文件
 !.gitignore

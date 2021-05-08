@@ -55,7 +55,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
             }
             is_gpu = False
         else:
-            paras['trainParas']['ap'] = mp.rfm  # 这个导致返回参数会用到 db_dir
+            paras['trainParas']['ap'] = mp.rfm + '/'  # 这个导致返回参数会用到 db_dir
             try:
                 result = main_api(memory_limit=memory_limit, **paras)
             except:

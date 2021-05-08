@@ -1,10 +1,9 @@
-from tanshicheng import TaskDBapi, get_logger, TaskDB
+from tanshicheng import TaskDBapi, get_logger, TaskDB, MainPath
 from _af_train import 随机图, DataHelper, metrics_to_results, main_api, tf, datetime
 from _ak_sala2018comb import 自动评估绘图
 import os
 from pprint import pprint, pformat
 import time
-import shutil
 import sys
 from _al_create_all_data import mongo_url
 
@@ -42,18 +41,13 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
         logger.critical(f'开始任务({完成任务})参数:\n' + pformat(paras))
         # 文件夹名
         time_start = time.time()
-        folder_name_ = f"{'_'.join(paras['mark'])};{time_start}/"
-        folder_name = f"{db_dir}/{folder_name_}/"
-        if os.path.exists(folder_name):  # 存在则删除
-            shutil.rmtree(folder_name)
-        if not os.path.exists(folder_name):  # 不存在新建
-            os.makedirs(folder_name)
+        mp = MainPath(f"{'_'.join(paras['mark'])};{time_start}/", root=db_dir)
         # 构建结果参数
         is_gpu = None
         if 'comb' in paras and os.path.exists(paras['comb']['RG']) and os.path.exists(paras['comb']['dh']):
             RG = 随机图(paras['comb']['RG'])
             dataHelper = DataHelper(load_file=paras['comb']['dh'])
-            metrics = 自动评估绘图(RG, dataHelper, f'{folder_name}/_.eps', **paras['comb'])[0]
+            metrics = 自动评估绘图(RG, dataHelper, f'{mp.rfm}/_.eps', **paras['comb'])[0]
             result = {
                 'epoch': {'0': {'to_m': {'2': metrics_to_results(metrics)}}},
                 'dh_graph_info': dataHelper.data['图统计信息'],
@@ -61,7 +55,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
             }
             is_gpu = False
         else:
-            paras['trainParas']['ap'] = folder_name  # 这个导致返回参数会用到 db_dir
+            paras['trainParas']['ap'] = mp.rfm  # 这个导致返回参数会用到 db_dir
             try:
                 result = main_api(memory_limit=memory_limit, **paras)
             except:
@@ -72,7 +66,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
                 is_gpu = False
         result = {
             'executed': True,
-            'main_path': folder_name_,
+            'main_path': mp.m,
             'machine': TaskDB.get_machine(is_gpu=is_gpu),
             'graph_info': result['dh_graph_info'],
             'time_start': time_start,
@@ -83,7 +77,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
                         pformat(result['result_all']['best_result']))
         # 更新任务
         response = TaskDBapi.request_api(request_data={'type': 'complete', 'db': db_api, 'no': response['task']['no'],
-                                                       'result': str(result)}, url=url, db_dir=db_dir)
+                                                       'result': str(result)}, url=url, mp=mp)
         if 'status' in response and response['status'] >= 1:  # 表示完成
             api写入任务 += 1
         else:
@@ -104,17 +98,14 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
 if __name__ == '__main__':
     url = 'http://10.10.1.101:38000'
     db_api = 'am_all_train'
+    db_dir = 'ao_1'  # 任务之间的 main_path 不能相同
 
-    try:  # 第1个参数修改数据保存路径
-        db_dir = sys.argv[1]
-    except:
-        db_dir = 'ao_1'
-    try:  # 第2个参数是显存限制
-        memory_limit = float(sys.argv[2])
+    try:  # 第1个参数是显存限制
+        memory_limit = float(sys.argv[1])
     except:
         memory_limit = None
-    try:  # 第3个参数是用查询过滤获取任务
-        query = sys.argv[3]
+    try:  # 第2个参数是用查询过滤获取任务
+        query = sys.argv[2]
     except:
         query = 'None'
 

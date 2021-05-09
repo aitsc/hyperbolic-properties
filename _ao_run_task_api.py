@@ -7,16 +7,14 @@ import time
 import sys
 from _al_create_all_data import mongo_url
 
-logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
+logger = get_logger(f'log/{os.path.split(__file__)[1]}.log', mode='a')
 
 
-def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, query='None'):
+def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'):
     """
     通过api运行任务
     :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
-    :param db_dir: 生成数据的主目录, 用于保存数据, 最后其子目录需要剪切到api数据库的位置
-        没有会自动生成, 如果新生成的子文件夹也存在会被删除
-    :param db_api: 访问 api 的哪个数据库
+    :param db_api: 访问 api 的哪个数据库, 也是生成数据的主目录, 用于保存数据, 最后其子目录需要剪切到api数据库的位置
     :param url: str; 获取数据的api接口
     :param memory_limit: int or float or None; 最大显存限制, 单位MB, None表示不限制. 过大可能导致 out of memory 报错
     :param query: str; 用于过滤request任务
@@ -41,13 +39,13 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
         logger.critical(f'开始任务({完成任务})参数:\n' + pformat(paras))
         # 文件夹名
         time_start = time.time()
-        mp = MainPath(f"{'_'.join(paras['mark'])};{time_start}/", root=db_dir)
+        mp = MainPath(f"{'_'.join(paras['mark'])};{time_start}", root=db_api)
         # 构建结果参数
         is_gpu = None
         if 'comb' in paras and os.path.exists(paras['comb']['RG']) and os.path.exists(paras['comb']['dh']):
             RG = 随机图(paras['comb']['RG'])
             dataHelper = DataHelper(load_file=paras['comb']['dh'])
-            metrics = 自动评估绘图(RG, dataHelper, f'{mp.rfm}/_.eps', **paras['comb'])[0]
+            metrics = 自动评估绘图(RG, dataHelper, f'{mp.p("rufm")}/_.eps', **paras['comb'])[0]
             result = {
                 'epoch': {'0': {'to_m': {'2': metrics_to_results(metrics)}}},
                 'dh_graph_info': dataHelper.data['图统计信息'],
@@ -55,7 +53,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
             }
             is_gpu = False
         else:
-            paras['trainParas']['ap'] = mp.rfm + '/'  # 这个导致返回参数会用到 db_dir
+            paras['trainParas']['ap'] = mp.p("rufm") + '/'  # 这个导致返回参数会用到 db_dir
             try:
                 result = main_api(memory_limit=memory_limit, **paras)
             except:
@@ -66,7 +64,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
                 is_gpu = False
         result = {
             'executed': True,
-            'main_path': mp.m,
+            'main_path': mp.p("m"),
             'machine': TaskDB.get_machine(is_gpu=is_gpu),
             'graph_info': result['dh_graph_info'],
             'time_start': time_start,
@@ -82,7 +80,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
             api写入任务 += 1
         else:
             print('服务器未写入结果!')
-            logger.critical('服务器未写入结果!')
+            logger.critical('服务器未写入结果, response:\n', pformat(response))
         print('=' * 20, '本次任务结果:')
         pprint(result)
         out = f'已完成{完成任务}个任务, api已写入{api写入任务}个任务, 本次耗时{(time.time() - time_start) / 60}分钟.'
@@ -97,8 +95,7 @@ def run_task_train(dataset_db_path, db_dir, db_api, url, memory_limit=None, quer
 
 if __name__ == '__main__':
     url = 'http://10.10.1.101:38000'
-    db_api = 'am_all_train'
-    db_dir = 'ao_1'  # 任务之间的 main_path 不能相同
+    db_api = 'am_all_train'  # 任务之间的 main_path 不能相同
 
     try:  # 第1个参数是显存限制
         memory_limit = float(sys.argv[1])
@@ -109,10 +106,9 @@ if __name__ == '__main__':
     except:
         query = 'None'
 
-    if TaskDBapi.request_api({}, url=url, try_times=3):
+    if TaskDBapi.request_api({}, url=url, try_times=2):
         run_task_train(
             dataset_db_path='al_all_data',
-            db_dir=db_dir,
             db_api=db_api,
             url=url,
             memory_limit=memory_limit,

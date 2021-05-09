@@ -1,7 +1,7 @@
 tensorflow-gpu>=2.2.0
 numpy>=1.17.4
 scipy>=1.4.1
-tanshicheng>=0.3.12
+tanshicheng>=0.3.14
 colorama>=0.4.3
 pydot-ng>=2.0.0
 tqdm>=4.42.1

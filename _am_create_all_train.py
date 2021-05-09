@@ -323,22 +323,32 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
 
     open_mark = [['o2'], ['o3']]
     all_dim = [2, 4, 6, 8, 10, 12, 14, 16]
+    default_layer = ['gcn']
+    default_dh_L = [['LinkPred']]
+    default_manifold = [2]
+    default_manifold_performance = [1]
+    # default_layer = ['mlp', 'gcn', 'gat']
+    # default_dh_L = [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
+    # default_manifold = [0, 1, 2]
+    # default_manifold_performance = [0, 1, 2]
 
-    # 6个雷达图: (4任务*6指标)*3E流形*2维度*GCN*Animal
+    # 6个雷达图: (4任务*6指标)*3E流形*GCN*2公开集: decoder 影响
     paras_L_L.append(穷举构建简单任务方法({
         'dh_L': [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']],
         'layerManifold': [0, 1, 2],
         'dim': all_dim,
         'data_result': open_mark,
+        'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 6个雷达图: (3方法*6指标)*3E流形*2维度*LP*Animal + 庞加莱comb方法, 欧式二维绘图结果
+    # 6个雷达图: (3方法*6指标)*3E流形*LP*2公开集 + 庞加莱comb方法: encoder 影响
     # 8个散点图: poincare上的 HNN、GCN、GAT、Combinatorial*5精度*Animal
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['mlp', 'gcn', 'gat'],
         'layerManifold': [0, 1, 2],
         'dim': all_dim,
         'data_result': open_mark,
+        'dh_L': default_dh_L,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
@@ -346,18 +356,23 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'data_result': open_mark,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 6个三维透视图: (双指标可变树+2固定树)*6指标*二维*GCN*Poincare*LP
+    # 6个三维透视图: (双指标可变树+2固定树)*6指标*GCN*Poincare*LP: data 影响
     paras_L_L.append(穷举构建简单任务方法({
         'data_result': [['t6']],
         'dim': all_dim,
+        'dh_L': default_dh_L,
+        'layer': default_layer,
+        'manifold': default_manifold,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 2个雷达图: (4可变树+2固定树+4可变图)*(comb结果+3E流形)*2维度*GCN*LP
+    # 2个雷达图: (4可变树+2固定树+4可变图)*(comb结果+3E流形)*GCN*LP: data 影响
     mark = [['t1'], ['t2'], ['t3'], ['t4'], ['o2'], ['o3'], ['g1'], ['g2'], ['g3'], ['g4']]
     paras_L_L.append(穷举构建简单任务方法({
         'layerManifold': [0, 1, 2],
         'dim': all_dim,
         'data_result': mark,
+        'dh_L': default_dh_L,
+        'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
@@ -365,33 +380,38 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'data_result': mark[:-4],
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 4个数字热力图: (3E流形*3A流形*3D流形)*2维度*4指标*GCN*Animal*LP
+    # 4个数字热力图: (3E流形*3A流形*3D流形)*4指标*GCN*2公开树*LP: 转流形 影响
     paras_L_L.append(穷举构建简单任务方法({
         'manifold': [0, 1, 2],
         'layerManifold': [0, 1, 2],
         'actM_L': [0, 1, 2],
         'dim': all_dim,
         'data_result': open_mark,
+        'dh_L': default_dh_L,
+        'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN*二维
-    # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN*二维
+    # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN: 性能影响
+    # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN
     paras_L_L.append(穷举构建简单任务方法({
-        'manifold': [1],
+        'manifold': default_manifold_performance,
         'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
                  ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
         'mixedType': [0, 1, 2, 3, 9],
         'task_weight': [0.9],
         'dim': all_dim,
         'data_result': open_mark,
+        'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # 8个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*2维度*LP*GCN
+    # 4个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*LP*GCN: 混合树图 影响
     mark = [['t5'], ['t5.1.1'], ['t5.1.2'], ['t5.1.3'], ['t5.1.4'], ['t5.2.1'], ['t5.2.2'], ['t5.2.3'], ['t5.2.4']]
     paras_L_L.append(穷举构建简单任务方法({
-        'layerManifold': [2],
+        'layerManifold': default_manifold,
         'dim': all_dim,
         'data_result': mark,
+        'dh_L': default_dh_L,
+        'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],

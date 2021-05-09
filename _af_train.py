@@ -436,12 +436,13 @@ def getPreEncoder(encoder: Encoder, dataHelper: MixedDataset, mainPath: str, tra
     embedding = encoder.model(encoder.getData(dh.getDataset())).numpy()  # 只需要嵌入
 
     # 绘图测试 embedding,  用于测试 encoder 输出是否与预训练的一致, 适用于 E参数(不)固定 情况, 不适用于新增E
-    test_name = f'getPreEncoder-emb-m{encoder.manifold.s}-dh({dh.data["type"]})'
-    print('-' * 10, test_name, 'encoder预训练后输出嵌入')
-    节点坐标D = {}  # 构建节点坐标字典
-    for j, c in enumerate(embedding):
-        节点坐标D[j] = c.tolist()
-    dh.绘图(节点坐标D, 使用分类颜色=True, 使用树结构颜色=False, title=test_name, saveName=f'{mainPath}/{test_name}.pdf')
+    if encoder.encoderOutDim[-1] == 2:
+        test_name = f'getPreEncoder-emb-m{encoder.manifold.s}-dh({dh.data["type"]})'
+        print('-' * 10, test_name, 'encoder预训练后输出嵌入')
+        节点坐标D = {}  # 构建节点坐标字典
+        for j, c in enumerate(embedding):
+            节点坐标D[j] = c.tolist()
+        dh.绘图(节点坐标D, 使用分类颜色=True, 使用树结构颜色=False, title=test_name, saveName=f'{mainPath}/{test_name}.pdf')
 
     dh = dataHelper.task_dh[0]  # type: DataHelper
     if mixedType == 1:

@@ -45,7 +45,7 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
         if 'comb' in paras and os.path.exists(paras['comb']['RG']) and os.path.exists(paras['comb']['dh']):
             RG = 随机图(paras['comb']['RG'])
             dataHelper = DataHelper(load_file=paras['comb']['dh'])
-            metrics = 自动评估绘图(RG, dataHelper, f'{mp.p("rufm")}/_.eps', **paras['comb'])[0]
+            metrics = 自动评估绘图(RG, dataHelper, f'{mp["rufm"]}/_.eps', **paras['comb'])[0]
             result = {
                 'epoch': {'0': {'to_m': {'2': metrics_to_results(metrics)}}},
                 'dh_graph_info': dataHelper.data['图统计信息'],
@@ -53,7 +53,7 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
             }
             is_gpu = False
         else:
-            paras['trainParas']['ap'] = mp.p("rufm") + '/'  # 这个导致返回参数会用到 db_dir
+            paras['trainParas']['ap'] = mp["rufm"] + '/'  # 这个导致返回参数会用到 db_dir
             try:
                 result = main_api(memory_limit=memory_limit, **paras)
             except:
@@ -64,7 +64,7 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
                 is_gpu = False
         result = {
             'executed': True,
-            'main_path': mp.p("m"),
+            'main_path': mp["m"],
             'machine': TaskDB.get_machine(is_gpu=is_gpu),
             'graph_info': result['dh_graph_info'],
             'time_start': time_start,

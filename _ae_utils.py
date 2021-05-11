@@ -264,7 +264,7 @@ def printModelG(model, path):
     model._layers = [layer for layer in model._layers if isinstance(layer, Layer)]
     try:
         plot_model(model, to_file=path, show_shapes=True, show_layer_names=True, expand_nested=True)
-    except ImportError:
+    except:
         print(f"模型输出失败: {path}")
         print(traceback.format_exc())
 

@@ -2,8 +2,6 @@ from _ac_data_helper import *
 from _af_train import metrics_to_results
 from tanshicheng import TaskDB, Draw
 
-mongo_url = 'mongodb://tsc:tanshicheng123@127.0.0.1:27017/'
-
 
 class 数据生成任务(TaskDB):
     @property

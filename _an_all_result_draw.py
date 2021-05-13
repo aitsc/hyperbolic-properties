@@ -3,7 +3,8 @@ from tanshicheng import Draw
 from scipy import stats
 
 数据生成任务_obj = 数据生成任务('al_all_data')
-训练生成任务_obj = 训练生成任务('am_all_train', mongo_url=mongo_url)
+训练生成任务_obj = 训练生成任务('am_all_train',
+                    mongo_url=ast.literal_eval(open('connect.txt', 'r', encoding='utf8').read().strip())['mongo_url'])
 
 
 def 获得训练任务结果(query, 训练生成任务_obj=训练生成任务_obj, 数据生成任务_obj=数据生成任务_obj):

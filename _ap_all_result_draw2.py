@@ -3,7 +3,8 @@ from tanshicheng import Draw
 from scipy import stats
 
 obj_data = 数据生成任务('al_all_data')
-obj_train = 训练生成任务('am_all_train', mongo_url=mongo_url)
+obj_train = 训练生成任务('am_all_train',
+                   mongo_url=ast.literal_eval(open('connect.txt', 'r', encoding='utf8').read().strip())['mongo_url'])
 
 
 def get_obj_marks(query, dels=None):

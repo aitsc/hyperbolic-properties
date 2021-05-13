@@ -1,3 +1,4 @@
+import ast
 from tanshicheng import TaskDBapi, get_logger, TaskDB, MainPath
 from _af_train import 随机图, DataHelper, metrics_to_results, main_api, tf, datetime
 from _ak_sala2018comb import 自动评估绘图
@@ -5,12 +6,11 @@ import os
 from pprint import pprint, pformat
 import time
 import sys
-from _al_create_all_data import mongo_url
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log', mode='a')
 
 
-def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'):
+def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None', passwd=''):
     """
     通过api运行任务
     :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
@@ -18,12 +18,14 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
     :param url: str; 获取数据的api接口
     :param memory_limit: int or float or None; 最大显存限制, 单位MB, None表示不限制. 过大可能导致 out of memory 报错
     :param query: str; 用于过滤request任务
+    :param passwd: str; 用于api密码校验
     :return:
     """
     all_time = time.time()
     完成任务 = 1
     api写入任务 = 0
-    request_f = lambda: TaskDBapi.request_api(request_data={'type': 'request', 'db': db_api, 'query': query}, url=url)
+    request_f = lambda: TaskDBapi.request_api(
+        request_data={'type': 'request', 'db': db_api, 'query': query, 'passwd': passwd}, url=url)
     response = request_f()
     while 'task' in response and response['task']:
         paras = response['task']['paras']
@@ -75,7 +77,7 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
                         pformat(result['result_all']['best_result']))
         # 更新任务
         response = TaskDBapi.request_api(request_data={'type': 'complete', 'db': db_api, 'no': response['task']['no'],
-                                                       'result': str(result)}, url=url, mp=mp)
+                                                       'result': str(result), 'passwd': passwd}, url=url, mp=mp)
         if 'status' in response and response['status'] >= 1:  # 表示完成
             api写入任务 += 1
         else:
@@ -94,8 +96,13 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
 
 
 if __name__ == '__main__':
-    url = 'http://10.10.1.101:38000'
     db_api = 'am_all_train'  # 任务之间的 main_path 不能相同
+    # 读取参数
+    with open('connect.txt', 'r', encoding='utf8') as r:
+        connect = ast.literal_eval(r.read().strip())
+        mongo_url = connect['mongo_url']
+        api_url = connect['api_url']
+        api_passwd = connect['api_passwd']
 
     try:  # 第1个参数是显存限制
         memory_limit = float(sys.argv[1])
@@ -106,13 +113,14 @@ if __name__ == '__main__':
     except:
         query = 'None'
 
-    if TaskDBapi.request_api({}, url=url, try_times=2):
+    if TaskDBapi.request_api({}, url=api_url, try_times=2):
         run_task_train(
             dataset_db_path='al_all_data',
             db_api=db_api,
-            url=url,
+            url=api_url,
             memory_limit=memory_limit,
             query=query,
+            passwd=api_passwd,
         )
     else:
         print('\n启动服务端:')
@@ -121,6 +129,7 @@ if __name__ == '__main__':
             port=19999,
             log_path=f'log/TaskDBapi.app_run.log',
             mongo_url=mongo_url,
+            passwd=api_passwd,
         )
         obj = TaskDB(db_api, mongo_url=mongo_url)
         print('output_table...')

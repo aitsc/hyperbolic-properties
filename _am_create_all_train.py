@@ -1,4 +1,5 @@
-from _al_create_all_data import 数据生成任务, mongo_url
+import ast
+from _al_create_all_data import 数据生成任务
 from _af_train import *
 from _ak_sala2018comb import *
 from tanshicheng import TaskDB, get_logger
@@ -327,10 +328,11 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
     default_dh_L = [['LinkPred']]
     default_manifold = [2]
     default_manifold_performance = [1]
+
     # default_layer = ['mlp', 'gcn', 'gat']
     # default_dh_L = [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
-    # default_manifold = [0, 1, 2]
-    # default_manifold_performance = [0, 1, 2]
+    default_manifold = [0, 1, 2]
+    default_manifold_performance = [0, 1, 2]
 
     # 6个雷达图: (4任务*6指标)*3E流形*GCN*2公开集: decoder 影响
     paras_L_L.append(穷举构建简单任务方法({
@@ -434,6 +436,7 @@ if __name__ == '__main__':
     重新构建未完成任务 = True  # 当 构建新任务=False, 删除所有未执行和已执行但是没有数据的任务, 然后加入 构训练任务() 中未执行的任务. 意思就是已执行的就算了, 未执行的都和 构训练任务() 一致.
     路径 = 'am_all_train'
     数据生成任务_obj = 数据生成任务('al_all_data')
+    mongo_url = ast.literal_eval(open('connect.txt', 'r', encoding='utf8').read().strip())['mongo_url']
 
     start = time.time()
     if not os.path.exists(路径):
@@ -459,6 +462,7 @@ if __name__ == '__main__':
                         更新任务 += 1
                     else:
                         print('.', end='')
+            # raise
             print('\n一共更新任务数:')
             print(len(obj.add_tasks(info_L)))
     obj.clean()

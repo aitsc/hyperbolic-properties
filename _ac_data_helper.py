@@ -29,6 +29,8 @@ class DataHelper:
             }
             if 'short_path_matrix' in data and data['short_path_matrix'] is not None:
                 self.data['short_path_matrix'] = data['short_path_matrix']
+            if 'short_path_matrix_st' in data and data['short_path_matrix_st'] is not None:  # 多树混合图子树
+                self.data['short_path_matrix_st'] = data['short_path_matrix_st']
         elif load_file:
             self.读取数据(load_file)
         else:
@@ -119,13 +121,15 @@ class DataHelper:
         mx = r_mat_inv.dot(mx)
         return mx
 
-    def 评估(self, 距离三元组, 原点距离二元组, 计算节点距离保持指标=False, 强制计算图失真=False):
+    def 评估(self, 距离三元组, 原点距离二元组, 计算节点距离保持指标=False, 强制计算图失真=False, 计算子树图失真=True):
         '''
         对于 图失真指标, 距离三元组 有多少组距离就算多少组平均.
         :param 距离三元组: [(点l,点r,距离),..], 可以只是上三角或下三角, 没有的距离会默认为0
         :param 原点距离二元组: [(点编号,离原点的距离),..]
         :param 计算节点距离保持指标: bool, 是否计算节点距离保持指标, 需要完整的 距离三元组, 否则报错
         :param 强制计算图失真: bool, 是否强制计算图失真指标, 强制计算需要计算全图最短距离
+        :param 计算子树图失真: bool, 对于多树混合图的子树, 是否强制计算图失真指标, 强制计算需要计算子树最短距离
+            前提: 强制计算图失真==True
         :return:
         '''
         trees = self.data['trees']
@@ -147,24 +151,24 @@ class DataHelper:
         点交集数量 = len(set(nodes_c_dist) & set(nodes))
         assert 点交集数量 == len(nodes), '原点距离二元组 缺少部分数据中的点!'
         metrics = {  # 指标全是列表, 前面带.的不是指标
-            '图失真指标': None,  # [float], 距离三元组 不全这个值算的就不全
+            '图失真指标': None,  # [float,..], 距离三元组 不全这个值算的就不全, 如果多个树则最后一个是整体, 只有一个树第一个就是整体
             '根节点层级指标': None,  # [float,..], 按序一个树一个
             '父节点层级指标': None,  # [float,..], 按序一个树一个
             '原点层级指标': None,  # [float,..], 按序一个树一个
             '兄节点距离保持指标': None,  # [float,..], 按序一个树一个
             '原点距离_度NDCG': None,  # [float,..], 按序一个树一个, 如果多个树则最后一个是整体, 只有一个树第一个就是整体
-            '图失真指标_密度': None,  # [float], 距离三元组 不全这个值算的就不全
+            '图失真指标_密度': None,  # [float,..], 距离三元组 不全这个值算的就不全, 如果多个树则最后一个是整体, 只有一个树第一个就是整体
             '两点距离_均值': None,  # [float], 距离三元组 不全这个值算的就不全
             '两点距离_标准差': None,  # [float], 距离三元组 不全这个值算的就不全, 总体标准差
             '两点距离_最大值': None,  # [float], 距离三元组 不全这个值算的就不全
             '.shorthand': [  # 指标名称, 简写, latex简写, 会用于可视化图片 title
-                ['根节点层级指标', 'M1', '$\\mathrm{M}_{1}$'],
-                ['原点层级指标', 'M2', '$\\mathrm{M}_{2}$'],
-                ['父节点层级指标', 'M3', '$\\mathrm{M}_{3}$'],
-                ['兄节点距离保持指标', 'M4', '$\\mathrm{M}_{4}$'],
+                ['根节点层级指标', 'M1', '$\\mathrm{M}_{r}$'],
+                ['原点层级指标', 'M2', '$\\mathrm{M}_{o}$'],
+                ['父节点层级指标', 'M3', '$\\mathrm{M}_{p}$'],
+                ['兄节点距离保持指标', 'M4', '$\\mathrm{M}_{b}$'],
                 ['原点距离_度NDCG', 'M5', '$\\mathrm{M}_{5}$'],
-                ['图失真指标', 'M6', '$\\mathrm{M}_{6}$'],
-                ['图失真指标_密度', 'M7', '$\\mathrm{M}_{7}$'],
+                ['图失真指标', 'M6', '$\\mathrm{M}_{d}$'],
+                ['图失真指标_密度', 'M7', '$\\mathrm{M}_{dd}$'],
             ],
         }
         dist = lambda p1, p2: max(距离矩阵[p1, p2], 距离矩阵[p2, p1])
@@ -181,12 +185,12 @@ class DataHelper:
             if 强制计算图失真:
                 # 计算多源最短路径
                 print('计算多源最短路径...')
-                short_path_matrix = multi_source_shortest_path(nodes, edges)
+                short_path_matrix = multi_source_shortest_path(nodes, edges)  # 全节点-连通图, 否则有 float('inf')
                 self.data['short_path_matrix'] = short_path_matrix
             else:
                 short_path_matrix = None
         if short_path_matrix is not None:
-            边标记矩阵 = 距离矩阵 != 0  # 半三角无自环, 值为1
+            边标记矩阵 = 距离矩阵 != 0  # 半三角无自环, 值为1. 距离为0则缺标记边, 这里不影响结果
             最短路径矩阵 = short_path_matrix * 边标记矩阵  # 半三角无自环, 值为最短路径, 其他没有相应边的值为0
             # 用于除以距离密度以保证不受距离相对值影响
             距离密度 = metrics['两点距离_均值'] / (最短路径矩阵.sum() / len(距离三元组_np))
@@ -196,6 +200,44 @@ class DataHelper:
             m = (abs(m - 1) * 边标记矩阵).sum() / len(距离三元组_np)
             metrics['图失真指标'] = [m]
             metrics['图失真指标_密度'] = [2 / (1 + math.e ** -m_density) - 1]
+            # 每棵子树的图失真
+            if 计算子树图失真 and trees and len(trees) > 0:
+                print('每棵子树的图失真...')
+                图失真_subtrees = []
+                图失真_密度_subtrees = []
+                # 每棵子树的多源最短路径
+                if 'short_path_matrix_st' in self.data and self.data['short_path_matrix_st'] is not None:
+                    short_path_matrix_st = self.data['short_path_matrix_st']
+                else:
+                    short_path_matrix_st = []
+                    for i, t in enumerate(trees):
+                        树_边二元组 = []  # [(父节点编号,子节点编号),..]
+                        for p in t:
+                            树_边二元组 += [(p[0], sp) for sp in p[2]]
+                        print('multi_source_shortest_path:', i + 1)
+                        spm = multi_source_shortest_path(nodes, 树_边二元组)
+                        spm[np.isinf(spm)] = 0  # 去除非子树点的无穷大值
+                        short_path_matrix_st.append(spm)
+                    self.data['short_path_matrix_st'] = short_path_matrix_st
+                # 开始计算
+                for i, (spm, t) in enumerate(zip(short_path_matrix_st, trees)):
+                    spm = spm * 边标记矩阵  # spm 变为上三角或下三角, 0距离的会被标记0
+                    edges_mark = (spm != 0)  # 子树节点可达的边
+                    edge_num = np.count_nonzero(edges_mark)  # 子树节点可达的数量
+                    # 距离为0导致的 edge_num 不准, 矫正
+                    if edge_num != len(t) * (len(t) - 1) / 2:
+                        print(f'{i}-subtree 存在距离为0边: np.count_nonzero(spm * 边标记矩阵) != n*(n-1)/2 ; '
+                              f'{edge_num} != {len(t) * (len(t) - 1) / 2}')
+                        edge_num = len(t) * (len(t) - 1) / 2
+                    dis_mat = edges_mark * 距离矩阵  # 距离矩阵, 去除非子树节点距离
+                    距离密度 = dis_mat.sum() / edge_num / (spm.sum() / edge_num)
+                    m = (dis_mat / (spm + (spm == 0))) ** 2
+                    m_density = (abs(m / (距离密度 ** 2) - 1) * edges_mark).sum() / edge_num
+                    m = (abs(m - 1) * edges_mark).sum() / edge_num
+                    图失真_subtrees.append(m)
+                    图失真_密度_subtrees.append(2 / (1 + math.e ** -m_density) - 1)
+                metrics['图失真指标'] = 图失真_subtrees + metrics['图失真指标']
+                metrics['图失真指标_密度'] = 图失真_密度_subtrees + metrics['图失真指标_密度']
 
         # 根节点层级指标, 父节点层级指标, 原点层级指标
         if trees and len(trees) > 0:
@@ -300,7 +342,8 @@ class DataHelper:
         return metrics
 
     def 绘图(self, 节点坐标D, 使用分类颜色=False, 使用树结构颜色=False, ns=2, length=10, width=10, 保留坐标=True, title=None, saveName=None,
-           treesTitle=None, 使用层次颜色=8, useLegend=True, 多树图分子树绘制=True, 多树图分子树重制坐标=False, metrics=None):
+           treesTitle=None, 使用层次颜色=8, useLegend=True, 多树图分子树绘制=True, 多树图分子树重制坐标=False, metrics=None,
+           exclude_metrics=('M5',)):
         '''
         对于森林, 先画整体图, 子树分开的图按照 从左到右/从上到下 依次绘制trees中的树.
         :param 节点坐标D: {节点编号:(坐标x,坐标y),..}
@@ -318,12 +361,14 @@ class DataHelper:
         :param 多树图分子树绘制: bool, 对于多树混合图是否单独绘制每颗子树并放在一个图里
         :param 多树图分子树重制坐标: bool, 对于绘制多树混合图的每颗子树时, 按 随机图._树_节点坐标生成 的方式重新绘制每个子树
         :param metrics: None or dict, DataHelper.评估()的返回值, 可以将指标作为标题的一部分. format_metrics参数可在代码中修改
+        :param exclude_metrics: tuple; 排除不展示的指标简写, metrics['.shorthand'][1]
         :return: None or saveName_trees, 如果有多树图输出则返回多树图输出地址
         '''
+        exclude_metrics = set(exclude_metrics)
         if isinstance(metrics, dict) and metrics:
             title = format_metrics(  # 简化指标描述用于图片 title
-                [metrics[j[0]] for j in metrics['.shorthand']],
-                names=[j[2] for j in metrics['.shorthand']],
+                [metrics[j[0]] for j in metrics['.shorthand'] if j[1] not in exclude_metrics],
+                names=[j[2] for j in metrics['.shorthand'] if j[1] not in exclude_metrics],
                 seg=', ',
                 lineMaxLen=550,
                 frontText=title,
@@ -1196,8 +1241,8 @@ def main():
     # 文件路径 = 'ab_不平衡多叉树;1;[1023];[23];[0.1706];[1.0021];1023;0.pkl'
     # 文件路径 = 'ab_完全多叉树;1;[1023];[10];[0.0];[1.0];1023;0.pkl'
     # 文件路径 = 'ab_高低多叉树;1;[1023];[7];[0.0226];[1.2875];1023;0.pkl'
-    文件路径 = 'ab_低高多叉树;1;[1023];[9];[0.0034];[0.8981];1023;0.pkl'
-    # 文件路径 = 'ab_混合树图;4;[511,511,511,511];[9,16,8,6];[0.0,0.1626,0.0028,0.0253];[1.0,1.0,0.8957,1.2588];1858;0.pkl'
+    # 文件路径 = 'ab_低高多叉树;1;[1023];[9];[0.0034];[0.8981];1023;0.pkl'
+    文件路径 = 'ab_混合树图;4;[511,511,511,511];[9,16,8,6];[0.0,0.1626,0.0028,0.0253];[1.0,1.0,0.8957,1.2588];1858;0.pkl'
     # 文件路径 = 'ab_无标度网络;0;[];[];[];[];0;1023.pkl'
 
     图 = 随机图(文件路径)

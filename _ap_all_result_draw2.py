@@ -118,8 +118,8 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
-    r = 2
-    c = 3
+    r = 1
+    c = 5
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
     layerManifold = 2
     query_f = lambda data_result: {  # 用于切换不同的树
@@ -131,8 +131,20 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
     x_labels = ['Tree1', 'Tree2', 'Tree3  ', 'Tree4', 'Disease', 'Animal', ' Graph1', '   Graph2', ' Graph3', 'Graph4']
     spaces = ' ' * 40
 
-    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M5', 'M7']):
-        if 指标 == 'M5':  # 层次指标使用雷达图
+    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M7']):
+        if 指标 == 'data':  # 绘制IB-ID的平面散点图
+            tasks = obj_data.que_tasks({'paras': {'mark': ['t6']}})
+            xyt_scatter = []  # [(IB,ID,'(IB;ID;H)'),..]
+            for task in tasks:
+                if len(task['graph_info']['每棵树层次度分布的偏移度']) == len(task['graph_info']['每棵树不平衡程度']) == 1:
+                    ID = task['graph_info']['每棵树层次度分布的偏移度'][0]
+                    IB = task['graph_info']['每棵树不平衡程度'][0]
+                    H = task['graph_info']['每棵树的层数'][0]
+                    xyt_scatter.append((IB, ID, f'({round(IB, 3)};{round(ID, 3)};{H})'))
+            sub_title = f'({i + 1}): ($I_B$;$I_D$;$H$) for each dataset'
+            draw.add_scatter([xyt_scatter], scatter_labels=['Tree'], scatter_c='black', n=i + 1, sub_title=sub_title,
+                             sub_title_fs=None, xlabel='$I_B$', ylabel='$I_D$')
+        elif 指标 == 'M5':  # 层次指标使用雷达图
             line_data = [[], [], [], []]
             line_labels = []
             for j, lm in enumerate([0, 1, 2, 'comb']):
@@ -145,7 +157,8 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
                     layer = 'gcn'
                     dtype = 32
                     line_labels.append(Manifold.s_to_tex(lm))
-                for k, data in enumerate(['t1', 't2', 't3', 't4', 'o2', 'o3', 'g1', 'g2', 'g3', 'g4']):
+                # for k, data in enumerate(['t1', 't2', 't3', 't4', 'o2', 'o3', 'g1', 'g2', 'g3', 'g4']):
+                for k, data in enumerate(['t1', 't2', 't3', 't4', 'o2', 'o3']):
                     if layer == 'comb' and k > 5:  # comb 方法没有图
                         line_data[j].append(0)
                         continue
@@ -160,7 +173,7 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
                     result_L = [指标D[指标][0] for 指标D in 指标D_L]
                     line_data[j].append(sum(result_L) / len(result_L))
             sub_title = f'({i + 1}): {指标}' + spaces * 2
-            draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i + 1,
+            draw.add_radar(x_labels[:len(line_data[0])], line_labels, line_data, sub_title, fill_alpha=0.1, n=i + 1,
                            radii=(0.2, 0.4, 0.6, 0.8), set_legend=(.9, .87), title_pad=-15)
         else:
             xyz_L = []
@@ -172,8 +185,12 @@ def hierarchical_structure_3d(best_result=('metric', 'dev'), no=1):
                 xyz_L.append((IB, ID, sum(result_L) / len(result_L)))
             m_name = Manifold.s_to_tex(layerManifold)
             sub_title = f'({i + 1}): {m_name}, Z={指标}' + spaces
+            if 指标 == 'M5':
+                azim = 45
+            else:
+                azim = None
             draw.add_3d(xyz_L, xyz_scatter=[xyz_L], x_multiple=5, y_multiple=5,
-                        scatter_labels=['Tree'], interp_kind='linear',
+                        scatter_labels=['Tree'], interp_kind='linear', azim=azim,
                         xlabel='$I_B$', ylabel='$I_D$', zlabel='', sub_title=sub_title, n=i + 1)
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}.pdf')
 
@@ -186,8 +203,8 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
     :return:
     """
     print(sys._getframe().f_code.co_name, '...')
-    r = 2
-    c = 2
+    r = 1
+    c = 5
     layerManifold = 2
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
     # 该顺序需要和多树混合图中的子树顺序一致, 该顺序从生成数据的图片或IB/ID或['mixed_tree_order']中看出
@@ -208,7 +225,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
         for i1 in sub_trees]
     best_epoch_f = lambda t: str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
 
-    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4']):
+    for i, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M7']):
         line_data = [[], [], []]  # 每个线的数据
         line_labels = ['Comb', 'Mix-tree', 'Sub-tree']  # 每个线的名称, 注意顺序
         for k, (task_sub, task_sub_comb) in enumerate(zip(task_sub_L, task_sub_comb_L)):
@@ -218,7 +235,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev'), no=1):
             line_data[0].append(sum(result_L) / len(result_L))
             # Mix-tree
             指标D_L = [t['result_all']['epoch'][best_epoch_f(t)]['to_m'][str(layerManifold)] for t in task_mix]
-            result_L = [指标D[指标][k] for 指标D in 指标D_L]
+            result_L = [(指标D[指标][0] if len(指标D[指标]) == 1 else 指标D[指标][k]) for 指标D in 指标D_L]  # M6,M7 无子树
             line_data[1].append(sum(result_L) / len(result_L))
             # Sub-tree
             指标D_L = [t['result_all']['epoch'][best_epoch_f(t)]['to_m'][str(layerManifold)] for t in task_sub]
@@ -262,7 +279,7 @@ def act_loss_heatmap(best_result=('metric', 'dev'), no=1):
                 yticks.append(f'E:{Manifold.s_to_tex(E)},A:{Manifold.s_to_tex(A)}')
         sub_title = f'({i0 + 1}): {指标}'
         draw.add_heatmap(mat, xticks, yticks, sub_title=sub_title, n=i0 + 1, x_rotation=90, mat_text=2)
-    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
 def hierarchical_performance_line(best_result=('metric', 'dev'), no=1):
@@ -306,7 +323,7 @@ def hierarchical_performance_line(best_result=('metric', 'dev'), no=1):
             draw.add_line([1, 2, 3, 4, 5], xticks, xaxis='Hybrid training method', y_left=y_left, yaxis_left='M',
                           y_right=[y_right], yaxis_right=f'{yaxis_right_L[j]} (test set performance)',
                           ylabel_right=[yaxis_right_L[j]], ylabel_left=ylabel_left, title=sub_title, n=j * c + i + 1)
-    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
 def hierarchical_performance_heatmap(no=1, best_epoch=600):
@@ -355,7 +372,7 @@ def hierarchical_performance_heatmap(no=1, best_epoch=600):
                 mat.append([stats.spearmanr(metrics[:, i1], performance[:, k])[0] for i1 in range(len(xticks))])
         sub_title = f'({i + 1}): {Manifold.s_to_tex(layerManifold)}, dataset={tree_name_L[i]}'
         draw.add_heatmap(mat, xticks, yticks, sub_title=sub_title, n=i + 1, x_rotation=90, mat_text=2)
-    draw.draw(f'an_{no}_{sys._getframe().f_code.co_name}.pdf')
+    draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}.pdf')
 
 
 if __name__ == '__main__':
@@ -367,9 +384,9 @@ if __name__ == '__main__':
     hierarchical_structure_3d(('loss', 'train'), no)
     no += 1
     multi_hierarchical_structure_radar(('loss', 'train'), no)
-    no += 1
-    act_loss_heatmap(('loss', 'train'), no)
-    no += 1
-    hierarchical_performance_line(('loss', 'train'), no)
-    no += 1
-    hierarchical_performance_heatmap(no, 300)
+    # no += 1
+    # act_loss_heatmap(('loss', 'train'), no)
+    # no += 1
+    # hierarchical_performance_line(('loss', 'train'), no)
+    # no += 1
+    # hierarchical_performance_heatmap(no, 300)

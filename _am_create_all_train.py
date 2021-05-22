@@ -114,13 +114,18 @@ class 训练生成任务(TaskDB):
         })
         return result
 
-    def run_tasks(self, dataset_db_path):
+    def run_tasks(self, dataset_db_path, query=None):
         """
         运行任务
         :param dataset_db_path: 数据生成任务_obj 的位置, 用于寻找数据. 任务执行依赖其他 TaskDB
+        :param query: None or list or dict; 用于 self.que_tasks, None表示只取未完成任务
         :return:
         """
-        tasks = self.uncomplete_tasks
+        if query is None:
+            tasks = self.uncomplete_tasks
+        else:
+            tasks = self.que_tasks(query)
+            print(f'查询到{len(tasks)}个任务将开始 run_tasks...')
         完成任务 = 1
         while len(tasks) != 0:
             task = tasks.pop(0)
@@ -152,7 +157,8 @@ class 训练生成任务(TaskDB):
                 if 'comb' in paras and os.path.exists(paras['comb']['RG']) and os.path.exists(paras['comb']['dh']):
                     RG = 随机图(paras['comb']['RG'])
                     dataHelper = DataHelper(load_file=paras['comb']['dh'])
-                    metrics = 自动评估绘图(RG, dataHelper, f'{folder_name}/_.eps', **paras['comb'])[0]
+                    metrics = 自动评估绘图(RG, dataHelper, f"{folder_name}/_.{paras['trainParas']['pictureFromat']}",
+                                     **paras['comb'])[0]
                     result = {
                         'epoch': {'0': {'to_m': {'2': metrics_to_results(metrics)}}},
                         'dh_graph_info': dataHelper.data['图统计信息'],
@@ -330,27 +336,19 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
     default_manifold_performance = [1]
 
     # default_layer = ['mlp', 'gcn', 'gat']
-    # default_dh_L = [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
+    default_dh_L = [['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
     default_manifold = [0, 1, 2]
     default_manifold_performance = [0, 1, 2]
 
     # 6个雷达图: (4任务*6指标)*3E流形*GCN*2公开集: decoder 影响
-    paras_L_L.append(穷举构建简单任务方法({
-        'dh_L': [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']],
-        'layerManifold': [0, 1, 2],
-        'dim': all_dim,
-        'data_result': open_mark,
-        'layer': default_layer,
-    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-
     # 6个雷达图: (3方法*6指标)*3E流形*LP*2公开集 + 庞加莱comb方法: encoder 影响
     # 8个散点图: poincare上的 HNN、GCN、GAT、Combinatorial*5精度*Animal
     paras_L_L.append(穷举构建简单任务方法({
+        'dh_L': [['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel']],
         'layer': ['mlp', 'gcn', 'gat'],
         'layerManifold': [0, 1, 2],
         'dim': all_dim,
         'data_result': open_mark,
-        'dh_L': default_dh_L,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
@@ -369,19 +367,19 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
 
     # 2个雷达图: (4可变树+2固定树+4可变图)*(comb结果+3E流形)*GCN*LP: data 影响
     # mark = [['t1'], ['t2'], ['t3'], ['t4'], ['o2'], ['o3'], ['g1'], ['g2'], ['g3'], ['g4']]
-    mark = [['t1'], ['t2'], ['t3'], ['t4'], ['o2'], ['o3']]
-    paras_L_L.append(穷举构建简单任务方法({
-        'layerManifold': [0, 1, 2],
-        'dim': all_dim,
-        'data_result': mark,
-        'dh_L': default_dh_L,
-        'layer': default_layer,
-    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-    paras_L_L.append(穷举构建简单任务方法({
-        'layer': ['comb'],
-        'dtype': [3000],
-        'data_result': mark[:-4],
-    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # mark = [['t1'], ['t2'], ['t3'], ['t4'], ['o2'], ['o3']]
+    # paras_L_L.append(穷举构建简单任务方法({
+    #     'layerManifold': [0, 1, 2],
+    #     'dim': all_dim,
+    #     'data_result': mark,
+    #     'dh_L': default_dh_L,
+    #     'layer': default_layer,
+    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # paras_L_L.append(穷举构建简单任务方法({
+    #     'layer': ['comb'],
+    #     'dtype': [3000],
+    #     'data_result': mark[:-4],
+    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # # 4个数字热力图: (3E流形*3A流形*3D流形)*4指标*GCN*2公开树*LP: 转流形 影响
     # paras_L_L.append(穷举构建简单任务方法({
@@ -434,7 +432,7 @@ if __name__ == '__main__':
     # 训练生成任务.test()
 
     构建新任务 = False
-    重新构建未完成任务 = True  # 当 构建新任务=False, 删除所有未执行和已执行但是没有数据的任务, 然后加入 构训练任务() 中未执行的任务. 意思就是已执行的就算了, 未执行的都和 构训练任务() 一致.
+    重新构建未完成任务 = False  # 当 构建新任务=False, 删除所有未执行和已执行但是没有数据的任务, 然后加入 构训练任务() 中未执行的任务. 意思就是已执行的就算了, 未执行的都和 构训练任务() 一致.
     路径 = 'am_all_train'
     数据生成任务_obj = 数据生成任务('al_all_data')
     mongo_url = ast.literal_eval(open('connect.txt', 'r', encoding='utf8').read().strip())['mongo_url']
@@ -467,7 +465,7 @@ if __name__ == '__main__':
             print('\n一共更新任务数:')
             print(len(obj.add_tasks(info_L)))
     obj.clean()
-    obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir)
+    obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir, query={'paras': {'mark': ['comb']}})
     print('=' * 10, '统计结果:')
     obj.统计结果()
     obj.close()

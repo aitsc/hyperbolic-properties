@@ -47,7 +47,8 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
         if 'comb' in paras and os.path.exists(paras['comb']['RG']) and os.path.exists(paras['comb']['dh']):
             RG = 随机图(paras['comb']['RG'])
             dataHelper = DataHelper(load_file=paras['comb']['dh'])
-            metrics = 自动评估绘图(RG, dataHelper, f'{mp["rufm"]}/_.eps', **paras['comb'])[0]
+            metrics = 自动评估绘图(RG, dataHelper, f'{mp["rufm"]}/_.{paras["trainParas"]["pictureFromat"]}',
+                             **paras['comb'])[0]
             result = {
                 'epoch': {'0': {'to_m': {'2': metrics_to_results(metrics)}}},
                 'dh_graph_info': dataHelper.data['图统计信息'],

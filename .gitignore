@@ -143,6 +143,7 @@ out/
 Payload/
 tmp/
 [a-z][a-z]_*/
+.idea/
 
 # 不排除的文件
 !.gitignore
@@ -204,7 +205,6 @@ tmp/
 !requirements.txt
 
 # 不排除的文件夹
-!.idea/
 !.settings/
 # 两个测试代码的文件, 测试af和ak
 !ac_test[.]pkl

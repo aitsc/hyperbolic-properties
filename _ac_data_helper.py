@@ -209,7 +209,7 @@ class DataHelper:
             metrics['图失真指标'] = [m]
             metrics['图失真指标_密度'] = [2 / (1 + math.e ** -m_density) - 1]
             # 每棵子树的图失真
-            if 计算子树图失真 and trees and len(trees) > 0:
+            if 计算子树图失真 and trees and len(trees) > 1:
                 print('每棵子树的图失真...')
                 图失真_subtrees = []
                 图失真_密度_subtrees = []

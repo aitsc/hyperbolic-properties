@@ -330,12 +330,7 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
 
     open_mark = [['o2'], ['o3']]
     all_dim = [2, 4, 6, 8, 10, 12, 14, 16]
-    default_layer = ['gcn']
-    default_dh_L = [['LinkPred']]
-    default_manifold = [2]
-    default_manifold_performance = [1]
-
-    # default_layer = ['mlp', 'gcn', 'gat']
+    default_layer = ['gcn', 'gat']
     default_dh_L = [['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
     default_manifold = [0, 1, 2]
     default_manifold_performance = [0, 1, 2]
@@ -432,7 +427,7 @@ if __name__ == '__main__':
     # 训练生成任务.test()
 
     构建新任务 = False
-    重新构建未完成任务 = False  # 当 构建新任务=False, 删除所有未执行和已执行但是没有数据的任务, 然后加入 构训练任务() 中未执行的任务. 意思就是已执行的就算了, 未执行的都和 构训练任务() 一致.
+    重新构建未完成任务 = True  # 当 构建新任务=False, 删除所有未执行和已执行但是没有数据的任务, 然后加入 构训练任务() 中未执行的任务. 意思就是已执行的就算了, 未执行的都和 构训练任务() 一致.
     路径 = 'am_all_train'
     数据生成任务_obj = 数据生成任务('al_all_data')
     mongo_url = ast.literal_eval(open('connect.txt', 'r', encoding='utf8').read().strip())['mongo_url']
@@ -453,6 +448,7 @@ if __name__ == '__main__':
             更新任务 = 1
             info_L = []
             for paras_L in 构训练任务(obj, 数据生成任务_obj):
+                # raise
                 for paras in paras_L:
                     tasks = obj.que_tasks({'paras': {'mark': paras['mark']}})
                     if len(tasks) == 0:
@@ -461,11 +457,10 @@ if __name__ == '__main__':
                         更新任务 += 1
                     else:
                         print('.', end='')
-            # raise
             print('\n一共更新任务数:')
             print(len(obj.add_tasks(info_L)))
     obj.clean()
-    obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir, query={'paras': {'mark': ['comb']}})
+    # obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir, query={'paras': {'mark': ['comb']}})
     print('=' * 10, '统计结果:')
     obj.统计结果()
     obj.close()

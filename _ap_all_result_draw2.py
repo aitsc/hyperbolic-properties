@@ -68,7 +68,8 @@ def friedman_test(paras_L, file_end='friedman'):
     :param file_end: str; 文件名后缀
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, file_end, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, file_end, '...')
     r = len(paras_L)
     draw = Draw(length=10, width=5 * r, r=r, c=1)
     alpha = 0.05
@@ -84,7 +85,6 @@ def friedman_test(paras_L, file_end='friedman'):
         )
         del r['x_no']
         print(r)
-    global no
     draw.draw(f'ap_{no}_{file_end}.pdf')
     no += 1
 
@@ -95,7 +95,8 @@ def decoder_radar(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 2
     c = 3
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
@@ -135,8 +136,7 @@ def decoder_radar(best_result=('metric', 'dev')):
             sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
                            line_labels, line_data, sub_title, fill_alpha=0.1,
-                           radii=(0.2, 0.4, 0.6, 0.8), set_legend='best')
-    global no
+                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best')
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     method_result_L = sorted(method_result_D.items())
@@ -154,7 +154,8 @@ def encoder_radar(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 2
     c = 3
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
@@ -210,8 +211,7 @@ def encoder_radar(best_result=('metric', 'dev')):
             sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
                            line_labels[:len(line_data)], line_data, sub_title, fill_alpha=0.1,
-                           radii=(0.2, 0.4, 0.6, 0.8), set_legend='best', colors=colors)
-    global no
+                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best', colors=colors)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     method_result_L = sorted(method_result_D.items())
@@ -230,8 +230,9 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
-    r = 1
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
+    r = 2
     c = 5
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
     get_指标D_L = lambda tasks: [  # 从tasks中提取所有指标结果, 使用encoder输出流形结果
@@ -248,7 +249,7 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
             '$in': [f'd{i}' for i in [2, 4, 6, 8, 10, 12, 14, 16]],
         }},
         {'paras.mark': {'$in': [j[mark_index_D['ds']] for j in marks]}},
-        {'paras.mark': {'$in': ['LinkPred']}},
+        {'paras.mark': {'$in': ['LinkPred','GraphDistor','HypernymyRel']}},
         {'$or': [
             # {'paras.mark': {'$all': ['E0', 'A0', 'D0']}},
             {'paras.mark': {'$all': ['E1', 'A1', 'D1']}},
@@ -312,14 +313,16 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
                 result_L = [指标D[指标][0] for 指标D in 指标D_L]
                 xyz_L.append((IB, ID, sum(result_L) / len(result_L)))
             sub_title = f'({i + 1}): Z axis is {metric_tex_D[指标]}'
-            if 指标 == 'M5':
+            if 指标 == 'M4':
                 azim = 45
             else:
                 azim = None
             draw.add_3d(xyz_L, xyz_scatter=[xyz_L], x_multiple=5, y_multiple=5,
                         scatter_labels=['Tree'], interp_kind='linear', azim=azim,
                         xlabel='$I_B$', ylabel='$I_D$', zlabel='', sub_title=sub_title, n=i + 1)
-    global no
+            draw.add_3d(xyz_L, xyz_scatter=[xyz_L], x_multiple=5, y_multiple=5,  # 向下俯看
+                        interp_kind='linear', azim=90, elev=90, colorbar=False,
+                        xlabel='$I_B$', ylabel='$I_D$', zlabel='', xyz_ticks=(True, True, False), n=i + 1 + c)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -331,14 +334,16 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 1
     c = 5
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
     # 该顺序需要和多树混合图中的子树顺序一致, 该顺序从生成数据的图片或IB/ID或['mixed_tree_order']中看出
     sub_trees = ['t5.1.1', 't5.1.2', 't5.1.3', 't5.1.4', 't5.2.1', 't5.2.2', 't5.2.3', 't5.2.4']
     sub_trees = [i + '-m1' for i in sub_trees]
-    x_labels = ['$T_1$', '$T_2$', '$T_3$', '$T_4$', '$T_5$', '$T_6$', '$T_7$', '$T_8$']
+    # x_labels = ['$T_1$', '$T_2$', '$T_3$', '$T_4$', '$T_5$', '$T_6$', '$T_7$', '$T_8$']
+    x_labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8']
     line_labels = ['Comb', 'Mix-tree', 'Sub-tree']  # 每个线的名称, 注意顺序与 line_data 一致
     # 用于 friedman test
     sub_tree_ftg_D = {  # 一个 sub_tree 对应于 friedman检验图的第几个, 和 paras_L 一致
@@ -350,7 +355,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
     paras_L = [{  # friedman检验图 的参数
         'x': [[] for i in range(len(x_labels))],
         # 算法 line_labels[1] 和 line_labels[2] 交替
-        'yticks': [f'{j}.{i}' for i in [f"{x_labels[k]}{x_labels[k + 4]}" for k in range(4)] for j in line_labels[1:]],
+        'yticks': [f'{j}.{i}' for i in [f"{x_labels[k]}+{x_labels[k + 4]}" for k in range(4)] for j in line_labels[1:]],
         'title_end': ''
     }]
     print(paras_L[0]['yticks'])
@@ -362,7 +367,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
         ]['to_m'][str(t['paras']['encoderParas']['manifold'])] for t in tasks]
     # 用于查询合并多少结果
     query_paras_L = [
-        {'paras.mark': {'$in': ['LinkPred']}},
+        {'paras.mark': {'$in': ['LinkPred','GraphDistor','HypernymyRel']}},
         {'$or': [
             # {'paras.mark': {'$all': ['E0', 'A0', 'D0']}},
             {'paras.mark': {'$all': ['E1', 'A1', 'D1']}},
@@ -429,7 +434,6 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
         sub_title = f'({i + 1}): {metric_tex_D[指标]}'
         draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i + 1,
                        radii=(0.2, 0.4, 0.6, 0.8), set_legend=(0.95, .9), title_pad=20)
-    global no
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -442,7 +446,8 @@ def act_loss_heatmap(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 2
     c = 2
     draw = Draw(length=c * 4, width=r * 5, r=r, c=c)
@@ -467,7 +472,6 @@ def act_loss_heatmap(best_result=('metric', 'dev')):
                 yticks.append(f'E:{Manifold.s_to_tex(E)},A:{Manifold.s_to_tex(A)}')
         sub_title = f'({i0 + 1}): {metric_tex_D[指标]}'
         draw.add_heatmap(mat, xticks, yticks, sub_title=sub_title, n=i0 + 1, x_rotation=90, mat_text=2)
-    global no
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -479,7 +483,8 @@ def hierarchical_performance_line(best_result=('metric', 'dev')):
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 4
     c = 2
     draw = Draw(length=c * 8, width=r * 4, r=r, c=c)
@@ -515,7 +520,6 @@ def hierarchical_performance_line(best_result=('metric', 'dev')):
                           ylabel_right=[yaxis_right_L[j]],
                           ylabel_left=[metric_tex_D[metric] for metric in ylabel_left],
                           title=sub_title, n=j * c + i + 1)
-    global no
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -527,7 +531,8 @@ def hierarchical_performance_heatmap(best_epoch=600):
     :param best_epoch: int; 取 best_epoch 之前的结果计算 spearmanr. 因为多个维度平均所以不能使用 best_result
     :return:
     """
-    print('\n', sys._getframe().f_code.co_name, '...')
+    global no
+    print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 1
     c = 2
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
@@ -567,7 +572,6 @@ def hierarchical_performance_heatmap(best_epoch=600):
         sub_title = f'({i + 1}): {Manifold.s_to_tex(layerManifold)}, dataset={tree_name_L[i]}'
         draw.add_heatmap(mat, [metric_tex_D[metric] for metric in xticks],
                          yticks, sub_title=sub_title, n=i + 1, x_rotation=90, mat_text=2)
-    global no
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}.pdf')
     no += 1
 
@@ -585,6 +589,6 @@ if __name__ == '__main__':
 
     hierarchical_structure_3d(('loss', 'train'))
     multi_hierarchical_structure_radar(('loss', 'train'))
-    # act_loss_heatmap(('loss', 'train'))
-    # hierarchical_performance_line(('loss', 'train'))
-    # hierarchical_performance_heatmap(300)
+    act_loss_heatmap(('loss', 'train'))
+    hierarchical_performance_line(('loss', 'train'))
+    hierarchical_performance_heatmap(300)

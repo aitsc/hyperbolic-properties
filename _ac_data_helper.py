@@ -124,7 +124,7 @@ class DataHelper:
     @staticmethod
     def get_default_metrics():
         """
-        获取初始的 metrics, 用于 评估() 等需要 shorthand 的方法
+        获取初始的 metrics, 比如用于 评估() 等需要 shorthand 的方法
         :return:
         """
         return {  # 指标全是列表, 前面带.的不是指标

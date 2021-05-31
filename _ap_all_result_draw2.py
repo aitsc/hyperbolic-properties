@@ -442,6 +442,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
 
 def act_loss_heatmap(best_result=('metric', 'dev')):
     """
+
     4个数字热力图: (3D流形*2维度)*(3E流形*3A流形)*4指标*GCN*Animal*LP
     :param best_result: ('metrics/loss', 'test/dev/train')
     :return:
@@ -449,12 +450,14 @@ def act_loss_heatmap(best_result=('metric', 'dev')):
     global no
     print('\n', no, sys._getframe().f_code.co_name, '...')
     r = 2
-    c = 2
+    c = 3
     draw = Draw(length=c * 4, width=r * 5, r=r, c=c)
-    data_result = ['o3']
-    best_epoch_f = lambda t: str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
+    get_指标D_L = lambda tasks: [  # 从tasks中提取所有指标结果, 使用encoder输出流形结果
+        t['result_all']['epoch'][
+            str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
+        ]['to_m'][str(t['paras']['encoderParas']['manifold'])] for t in tasks]
 
-    for i0, 指标 in enumerate(['M1', 'M2', 'M3', 'M4']):
+    for i0, 指标 in enumerate(['M1', 'M2', 'M3', 'M4', 'M7']):
         mat = []
         yticks = []
         for i1, E in enumerate([0, 1, 2]):
@@ -462,10 +465,24 @@ def act_loss_heatmap(best_result=('metric', 'dev')):
                 mat.append([])
                 xticks = []
                 for i3, D in enumerate([0, 1, 2]):
-                    mark = get_obj_marks({'layerManifold': [E], 'actM_L': [A], 'manifold': [D],
-                                          'data_result': [data_result]}, ['d'])[0]
-                    tasks, m = get_dim_task(obj_train.que_tasks({'paras': {'mark': mark}}))[:2]  # 获得所有维度任务
-                    指标D_L = [t['result_all']['epoch'][best_epoch_f(t)]['to_m'][str(m)] for t in tasks]
+                    tasks = obj_train.que_tasks([{'$match': {'$and': [
+                        {'paras.mark': {
+                            '$all': [f'E{E}', f'A{A}', f'D{D}', 'mt9', 'dt32', 'tw1', 're1'],
+                            '$in': [f'd{i}' for i in [2, 4, 6, 8, 10, 12, 14, 16]],
+                        }},
+                        {'paras.mark': {'$in': [
+                            # 'mlp',
+                            'gcn',
+                            # 'gat',
+                        ]}},
+                        {'paras.mark': {'$in': [
+                            # 'LinkPred',
+                            # 'GraphDistor',
+                            'HypernymyRel',
+                        ]}},
+                        {'paras.mark': {'$in': ['o3', 'o2']}},
+                    ]}}])
+                    指标D_L = get_指标D_L(tasks)
                     result_L = [指标D[指标][0] for 指标D in 指标D_L]  # 所有维度平均
                     mat[-1].append(sum(result_L) / len(result_L))
                     xticks.append(f'D:{Manifold.s_to_tex(D)}')
@@ -590,5 +607,6 @@ if __name__ == '__main__':
     hierarchical_structure_3d(('loss', 'train'))
     multi_hierarchical_structure_radar(('loss', 'train'))
     act_loss_heatmap(('loss', 'train'))
-    hierarchical_performance_line(('loss', 'train'))
-    hierarchical_performance_heatmap(300)
+    # act_loss_heatmap(('loss', 'dev'))
+    # hierarchical_performance_line(('loss', 'train'))
+    # hierarchical_performance_heatmap(300)

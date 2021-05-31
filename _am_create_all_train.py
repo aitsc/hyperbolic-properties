@@ -194,13 +194,6 @@ class 训练生成任务(TaskDB):
             完成任务 += 1
             print()
 
-    def 统计结果(self):
-        tasks = self.que_tasks({'executed': True})
-        print('已完成任务:')
-        pprint(tasks)
-        print('已完成任务数:', len(tasks), '; 未完成任务数:', len(self.tasks) - len(tasks))
-        self.output_table()
-
 
 mark_index_D = {
     'dh': 0,  # db_L
@@ -330,7 +323,7 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
 
     open_mark = [['o2'], ['o3']]
     all_dim = [2, 4, 6, 8, 10, 12, 14, 16]
-    default_layer = ['gcn', 'gat']
+    default_layer = ['gcn']
     default_dh_L = [['LinkPred'], ['GraphDistor'], ['HypernymyRel']]
     default_manifold = [0, 1, 2]
     default_manifold_performance = [0, 1, 2]
@@ -377,16 +370,16 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
     # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # # 4个数字热力图: (3E流形*3A流形*3D流形)*4指标*GCN*2公开树*LP: 转流形 影响
-    # paras_L_L.append(穷举构建简单任务方法({
-    #     'manifold': [0, 1, 2],
-    #     'layerManifold': [0, 1, 2],
-    #     'actM_L': [0, 1, 2],
-    #     'dim': all_dim,
-    #     'data_result': open_mark,
-    #     'dh_L': default_dh_L,
-    #     'layer': default_layer,
-    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-    #
+    paras_L_L.append(穷举构建简单任务方法({
+        'manifold': [0, 1, 2],
+        'layerManifold': [0, 1, 2],
+        'actM_L': [0, 1, 2],
+        'dim': all_dim,
+        'data_result': open_mark,
+        'dh_L': default_dh_L,
+        'layer': default_layer,
+    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+
     # # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN: 性能影响
     # # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN
     # paras_L_L.append(穷举构建简单任务方法({
@@ -407,7 +400,7 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'dim': all_dim,
         'data_result': mark,
         'dh_L': default_dh_L,
-        'layer': default_layer,
+        'layer': ['gcn'],  # 混合树图节点太多不能用gat
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
     paras_L_L.append(穷举构建简单任务方法({
         'layer': ['comb'],
@@ -462,6 +455,6 @@ if __name__ == '__main__':
     obj.clean()
     # obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir, query={'paras': {'mark': ['comb']}})
     print('=' * 10, '统计结果:')
-    obj.统计结果()
+    print(obj.stat_result())
     obj.close()
     print('总耗时:', (time.time() - start) / 3600, '小时')

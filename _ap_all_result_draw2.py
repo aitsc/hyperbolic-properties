@@ -73,13 +73,14 @@ def friedman_test(paras_L, file_end='friedman'):
     r = len(paras_L)
     draw = Draw(length=10, width=5 * r, r=r, c=1)
     alpha = 0.05
-    for paras in paras_L:
+    for i, paras in enumerate(paras_L):
         x = paras['x']
         yticks = paras['yticks']
         title_end = paras['title_end']
         r = draw.add_Ftest(
             x=x, yticks=yticks, xlabel='Rank', alpha=alpha,
-            sub_title='Friedman test: $p$-value{p}, Nemenyi post-hoc test: $\\alpha$=' +
+            sub_title=(f'({i + 1}) ' if len(paras_L) > 1 else '') +
+                      'Friedman test: $p$-value{p}, Nemenyi post-hoc test: $\\alpha$=' +
                       f'{alpha}{title_end}',
             p_vaule_f=lambda t, p: t.replace('{p}', ('=%.3e' % p) if p >= 10 ** -15 else '<1e-15')
         )
@@ -104,8 +105,11 @@ def decoder_radar(best_result=('metric', 'dev')):
     line_labels = ['NC', 'LP', 'GD', 'HR']
     datasets = ['Animal', 'Disease']  # 与 ds 对应
     best_epoch_f = lambda t: str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
-    method_result_D = {}  # {方法名:[结果1,..],..}
-    metrics_F = ['M1', 'M2', 'M3', 'M4']  # 用于 friedman test 的指标
+    method_result_D = {}  # {流形-方法名:[结果1,..],..}
+    method2_result_D = {}  # {best_result[1]-方法名:[结果1,..],..}
+    # 用于 friedman test 的指标
+    metrics_F = ['M1', 'M2', 'M3', 'M4']
+    # metrics_F = ['M7']
 
     for i, ds in enumerate([['o3'], ['o2']]):
         for j, m in enumerate([0, 1, 2]):
@@ -126,13 +130,12 @@ def decoder_radar(best_result=('metric', 'dev')):
                     result_L = [指标D[x_label][0] for 指标D in 指标D_L]  # 所有维度平均
                     line_data[-1].append(sum(result_L) / len(result_L))
                 # friedman test
-                method = f'{Manifold.s_to_tex(m)}-{line_labels[k]}'
                 for metric in metrics_F:
                     result_L = [指标D[metric][0] for 指标D in 指标D_L]
-                    if method in method_result_D:
-                        method_result_D[method] += result_L
-                    else:
-                        method_result_D[method] = result_L
+                    xx = method_result_D.setdefault(f'{Manifold.s_to_tex(m)}-{line_labels[k]}', [])
+                    xx += result_L
+                    xx = method2_result_D.setdefault(f'{best_result[1]}-{line_labels[k]}', [])
+                    xx += result_L
             sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
                            line_labels, line_data, sub_title, fill_alpha=0.1,
@@ -141,11 +144,13 @@ def decoder_radar(best_result=('metric', 'dev')):
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     method_result_L = sorted(method_result_D.items())
     no += 1
+    if 'dev-NC' in method2_result_D:
+        print(len(method2_result_D['dev-NC']))
     return {  # 用于 friedman_test
-        'x': [i[1] for i in method_result_L],
-        'yticks': [i[0] for i in method_result_L],
-        'title_end': f', Stop strategy: {stop_strategy}'
-    }
+               'x': [i[1] for i in method_result_L],
+               'yticks': [i[0] for i in method_result_L],
+               'title_end': f', Stop strategy: {stop_strategy}'
+           }, method2_result_D
 
 
 def encoder_radar(best_result=('metric', 'dev')):
@@ -164,15 +169,18 @@ def encoder_radar(best_result=('metric', 'dev')):
     datasets = ['Animal', 'Disease']  # 与 ds 对应
     best_epoch_f = lambda t: str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
     method_result_D = {}  # {方法名:[结果1,..],..}
-    metrics_F = ['M1', 'M2', 'M3', 'M4']  # 用于 friedman test 的指标
+    method2_result_D = {}  # {best_result[1]-方法名:[结果1,..],..}
     tasks_num = None
     colors = draw.ncolors(len(line_labels))[::-1]
+    # 用于 friedman test 的指标
+    metrics_F = ['M1', 'M2', 'M3', 'M4']
+    # metrics_F = ['M7']
 
     for i, ds in enumerate([['o3'], ['o2']]):
         for j, m in enumerate([0, 1, 2]):
             line_data = []
-            for k, layer in enumerate(['mlp', 'gcn', 'gat', 'comb']):  # comb 放最后
-                if layer != 'comb':
+            for k, layer in enumerate(['mlp', 'gcn', 'gat', 'comb', 'comb-32']):  # comb 放最后
+                if layer[:4] != 'comb':
                     tasks = obj_train.que_tasks([{'$match': {'$and': [
                         {'paras.mark': {
                             '$all': [layer, f'E{m}', f'A{m}', f'D{m}', 'mt9', 'dt32', 'tw1', ds[0], 're1'],
@@ -186,28 +194,34 @@ def encoder_radar(best_result=('metric', 'dev')):
                     指标D_L = [t['result_all']['epoch'][best_epoch_f(t)]['to_m'][str(m)] for t in tasks]
                     method = f'{Manifold.s_to_tex(m)}-{line_labels[k]}'
                 elif m == 2:
+                    if '-' in layer:
+                        layer, dt = layer.split('-')
+                    else:
+                        dt = '3000'
                     tasks = obj_train.que_tasks([{'$match': {'$and': [
                         {'paras.mark': {
-                            '$all': [layer, f'E2', f'A2', f'D2', 'd2', 'mt9', 'dt3000', 'tw1', ds[0], 're1'],
+                            '$all': [layer, f'E2', f'A2', f'D2', 'd2', 'mt9', f'dt{dt}', 'tw1', ds[0], 're1'],
                             '$in': ['LinkPred'],
                         }},
                     ]}}]) * tasks_num  # 一个任务结果
                     指标D_L = [t['result_all']['epoch']['0']['to_m'][str(m)] for t in tasks]
-                    method = f'{line_labels[k]}'
+                    method = f'{line_labels[3]}' + (f'({dt})' if dt != '3000' else '')
                 else:  # 其他流形的 comb 不需要
                     continue
                 # friedman test
                 for metric in metrics_F:
                     result_L = [指标D[metric][0] for 指标D in 指标D_L]
-                    if method in method_result_D:
-                        method_result_D[method] += result_L
-                    else:
-                        method_result_D[method] = result_L
+                    xx = method_result_D.setdefault(method, [])
+                    xx += result_L
+                    if layer[:4] != 'comb':
+                        xx = method2_result_D.setdefault(f'{best_result[1]}-{line_labels[k]}', [])
+                        xx += result_L
                 # radar, 如果需要comb可以放在 friedman test 后面
-                line_data.append([])
-                for x_label in x_labels:  # 每个指标的结果
-                    result_L = [指标D[x_label][0] for 指标D in 指标D_L]  # 所有维度平均
-                    line_data[-1].append(sum(result_L) / len(result_L))
+                if k < len(line_labels):
+                    line_data.append([])
+                    for x_label in x_labels:  # 每个指标的结果
+                        result_L = [指标D[x_label][0] for 指标D in 指标D_L]  # 所有维度平均
+                        line_data[-1].append(sum(result_L) / len(result_L))
             sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
                            line_labels[:len(line_data)], line_data, sub_title, fill_alpha=0.1,
@@ -217,10 +231,10 @@ def encoder_radar(best_result=('metric', 'dev')):
     method_result_L = sorted(method_result_D.items())
     no += 1
     return {  # 用于 friedman_test
-        'x': [i[1] for i in method_result_L],
-        'yticks': [i[0] for i in method_result_L],
-        'title_end': f', Stop strategy: {stop_strategy}'
-    }
+               'x': [i[1] for i in method_result_L],
+               'yticks': [i[0] for i in method_result_L],
+               'title_end': f', Stop strategy: {stop_strategy}'
+           }, method2_result_D
 
 
 def hierarchical_structure_3d(best_result=('metric', 'dev')):
@@ -249,7 +263,7 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
             '$in': [f'd{i}' for i in [2, 4, 6, 8, 10, 12, 14, 16]],
         }},
         {'paras.mark': {'$in': [j[mark_index_D['ds']] for j in marks]}},
-        {'paras.mark': {'$in': ['LinkPred','GraphDistor','HypernymyRel']}},
+        {'paras.mark': {'$in': ['LinkPred', 'GraphDistor', 'HypernymyRel']}},
         {'$or': [
             # {'paras.mark': {'$all': ['E0', 'A0', 'D0']}},
             {'paras.mark': {'$all': ['E1', 'A1', 'D1']}},
@@ -355,11 +369,13 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
     paras_L = [{  # friedman检验图 的参数
         'x': [[] for i in range(len(x_labels))],
         # 算法 line_labels[1] 和 line_labels[2] 交替
-        'yticks': [f'{j}.{i}' for i in [f"{x_labels[k]}+{x_labels[k + 4]}" for k in range(4)] for j in line_labels[1:]],
+        'yticks': [f'{j}({i})' for i in [f"{x_labels[k]}/{x_labels[k + 4]}" for k in range(4)] for j in line_labels[1:]],
         'title_end': ''
     }]
     print(paras_L[0]['yticks'])
-    metrics_F = ['M1', 'M2', 'M3', 'M4']  # 用于 friedman test 的指标
+    # 用于 friedman test 的指标
+    metrics_F = ['M1', 'M2', 'M3', 'M4']
+    # metrics_F = ['M7']
     # 从tasks中提取所有指标结果, 使用encoder输出流形结果
     get_指标D_L = lambda tasks: [
         t['result_all']['epoch'][
@@ -367,7 +383,7 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
         ]['to_m'][str(t['paras']['encoderParas']['manifold'])] for t in tasks]
     # 用于查询合并多少结果
     query_paras_L = [
-        {'paras.mark': {'$in': ['LinkPred','GraphDistor','HypernymyRel']}},
+        {'paras.mark': {'$in': ['LinkPred', 'GraphDistor', 'HypernymyRel']}},
         {'$or': [
             # {'paras.mark': {'$all': ['E0', 'A0', 'D0']}},
             {'paras.mark': {'$all': ['E1', 'A1', 'D1']}},
@@ -594,19 +610,28 @@ def hierarchical_performance_heatmap(best_epoch=600):
 
 
 if __name__ == '__main__':
-    friedman_paras_L = []
-    friedman_paras_L.append(decoder_radar(('loss', 'dev')))
-    friedman_paras_L.append(decoder_radar(('loss', 'train')))
-    friedman_test(friedman_paras_L, 'decoder_friedman')
+    x1, method2_result_D = decoder_radar(('loss', 'dev'))[:2]
+    x2, x = decoder_radar(('loss', 'train'))[:2]
+    method2_result_D.update(x)
+    friedman_test([x1, x2, {
+        'x': list(method2_result_D.values()),
+        'yticks': list(method2_result_D.keys()),
+        'title_end': '',
+    }], 'decoder_friedman')
 
-    friedman_paras_L = []
-    friedman_paras_L.append(encoder_radar(('loss', 'dev')))
-    friedman_paras_L.append(encoder_radar(('loss', 'train')))
-    friedman_test(friedman_paras_L, 'encoder_friedman')
+    x1, method2_result_D = encoder_radar(('loss', 'dev'))[:2]
+    x2, x = encoder_radar(('loss', 'train'))[:2]
+    method2_result_D.update(x)
+    friedman_test([x1,
+                   # x2,
+                   # {'x': list(method2_result_D.values()),  # encoder没必要, 不同敏感度的任务之间会抵消影响
+                   #  'yticks': list(method2_result_D.keys()),
+                   #  'title_end': '', }
+                   ], 'encoder_friedman')
 
     hierarchical_structure_3d(('loss', 'train'))
     multi_hierarchical_structure_radar(('loss', 'train'))
     act_loss_heatmap(('loss', 'train'))
-    # act_loss_heatmap(('loss', 'dev'))
-    # hierarchical_performance_line(('loss', 'train'))
-    # hierarchical_performance_heatmap(300)
+    act_loss_heatmap(('loss', 'dev'))
+    hierarchical_performance_line(('loss', 'train'))
+    hierarchical_performance_heatmap(300)

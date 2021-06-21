@@ -1,7 +1,7 @@
 from _am_create_all_train import *
 
 obj_data = 数据生成任务('al_all_data')
-for data in ['o2', 'o3', 't1', 't2', 't3', 't4', 't5']:
+for data in ['o2', 'o3', 't1', 't2', 't3', 't4']:
     task = obj_data.que_tasks({'paras': {'mark': [data]}})[0]
     print('提取任务:', task['paras']['mark'])
     load_file = f"{obj_data.db_dir}/{task['data_path']['dh']}"

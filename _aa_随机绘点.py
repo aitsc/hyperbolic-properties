@@ -64,8 +64,8 @@ class 随机树嵌入:
 
 exp_L = [
     (lambda norm, c=1: 1, 'Euclidean'),
-    (lambda norm, c=1: np.tanh(c * norm) / norm / c, 'Poincare'),
-    (lambda norm, c=1: np.sinh(norm * c) / norm / c, 'Hyperboloid'),
+    (lambda norm, c=1: np.tanh(c ** 0.5 * norm) / norm / c ** 0.5, 'Poincare'),
+    (lambda norm, c=1: np.sinh(norm * c ** 0.5) / norm / c ** 0.5, 'Hyperboloid'),
 ]
 形状L = [True, False]
 # 曲率L = [1, 0.5]

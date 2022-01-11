@@ -79,10 +79,11 @@ def friedman_test(paras_L, file_end='friedman'):
         title_end = paras['title_end']
         r = draw.add_Ftest(
             x=x, yticks=yticks, xlabel='Rank', alpha=alpha,
-            sub_title=(f'({i + 1}) ' if len(paras_L) > 1 else '') +
+            sub_title=(f'({chr(i + 97)}) ' if len(paras_L) > 1 else '') +
                       'Friedman test: $p$-value{p}, Nemenyi post-hoc test: $\\alpha$=' +
                       f'{alpha}{title_end}',
-            p_vaule_f=lambda t, p: t.replace('{p}', ('=%.3e' % p) if p >= 10 ** -15 else '<1e-15')
+            p_vaule_f=lambda t, p: t.replace('{p}', ('=%.3e' % p) if p >= 10 ** -15 else '<1e-15'),
+            sub_title_fs=13, legend_fs=13, xlabel_fs=13, xtick_fs=12, ytick_fs=12
         )
         del r['x_no']
         print(r)
@@ -102,7 +103,8 @@ def decoder_radar(best_result=('metric', 'dev')):
     c = 3
     draw = Draw(length=c * 5, width=r * 5, r=r, c=c)
     x_labels = ['M1', 'M2', 'M3', 'M4', 'M7']
-    line_labels = ['NC', 'LP', 'GD', 'HR']
+    # line_labels = ['NC', 'LP', 'GD', 'HR']
+    line_labels = ['LR', 'FD', 'GD', 'HR']
     datasets = ['Animal', 'Disease']  # 与 ds 对应
     best_epoch_f = lambda t: str(t['result_all']['best_result'][best_result[0]][best_result[1]]['epoch'])
     method_result_D = {}  # {流形-方法名:[结果1,..],..}
@@ -136,10 +138,11 @@ def decoder_radar(best_result=('metric', 'dev')):
                     xx += result_L
                     xx = method2_result_D.setdefault(f'{best_result[1]}-{line_labels[k]}', [])
                     xx += result_L
-            sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
+            sub_title = f'({chr(len(draw.already_drawn) + 97)}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
-                           line_labels, line_data, sub_title, fill_alpha=0.1,
-                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best')
+                           line_labels, line_data, sub_title, fill_alpha=0.1, fix_marker=None,
+                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best', sub_title_fs=18,
+                           legend_fs=14, xtick_fs=14)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     method_result_L = sorted(method_result_D.items())
@@ -222,10 +225,11 @@ def encoder_radar(best_result=('metric', 'dev')):
                     for x_label in x_labels:  # 每个指标的结果
                         result_L = [指标D[x_label][0] for 指标D in 指标D_L]  # 所有维度平均
                         line_data[-1].append(sum(result_L) / len(result_L))
-            sub_title = f'({len(draw.already_drawn) + 1}): {Manifold.s_to_tex(m)}, {datasets[i]}'
+            sub_title = f'({chr(len(draw.already_drawn) + 97)}): {Manifold.s_to_tex(m)}, {datasets[i]}'
             draw.add_radar([metric_tex_D[metric] for metric in x_labels],
-                           line_labels[:len(line_data)], line_data, sub_title, fill_alpha=0.1,
-                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best', colors=colors)
+                           line_labels[:len(line_data)], line_data, sub_title, fill_alpha=0.1, fix_marker=None,
+                           radii=(0, 0.2, 0.4, 0.6, 0.8, 1), set_legend='best', colors=colors, sub_title_fs=18,
+                           legend_fs=14, xtick_fs=14)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     method_result_L = sorted(method_result_D.items())
@@ -333,10 +337,12 @@ def hierarchical_structure_3d(best_result=('metric', 'dev')):
                 azim = None
             draw.add_3d(xyz_L, xyz_scatter=[xyz_L], x_multiple=5, y_multiple=5,
                         scatter_labels=['Tree'], interp_kind='linear', azim=azim,
-                        xlabel='$I_B$', ylabel='$I_D$', zlabel='', sub_title=sub_title, n=i + 1)
+                        xlabel='$I_B$', ylabel='$I_D$', zlabel='', sub_title=sub_title, n=i + 1,
+                        sub_title_fs=18, xlabel_fs=14, ylabel_fs=14)
             draw.add_3d(xyz_L, xyz_scatter=[xyz_L], x_multiple=5, y_multiple=5,  # 向下俯看
                         interp_kind='linear', azim=90, elev=90, colorbar=False,
-                        xlabel='$I_B$', ylabel='$I_D$', zlabel='', xyz_ticks=(True, True, False), n=i + 1 + c)
+                        xlabel='$I_B$', ylabel='$I_D$', zlabel='', xyz_ticks=(True, True, False), n=i + 1 + c,
+                        xlabel_fs=14, ylabel_fs=14)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -447,9 +453,10 @@ def multi_hierarchical_structure_radar(best_result=('metric', 'dev')):
             line_data[2].append(sum(result_L) / len(result_L))
             if 指标 in metrics_F:
                 paras_L[0]['x'][sub_tree_ftg_D[sub_trees[k]] * 2 + 1] += result_L
-        sub_title = f'({i + 1}): {metric_tex_D[指标]}'
+        sub_title = f'({chr(i + 97)}): {metric_tex_D[指标]}'
         draw.add_radar(x_labels, line_labels, line_data, sub_title, fill_alpha=0.1, n=i + 1,
-                       radii=(0.2, 0.4, 0.6, 0.8), set_legend=(0.95, .9), title_pad=20)
+                       radii=(0.2, 0.4, 0.6, 0.8), set_legend=(0.95, .9), title_pad=20,
+                       sub_title_fs=18)
     stop_strategy = f'{best_result[1]}-{best_result[0]}'
     draw.draw(f'ap_{no}_{sys._getframe().f_code.co_name}_{stop_strategy}.pdf')
     no += 1
@@ -631,7 +638,7 @@ if __name__ == '__main__':
 
     hierarchical_structure_3d(('loss', 'train'))
     multi_hierarchical_structure_radar(('loss', 'train'))
-    act_loss_heatmap(('loss', 'train'))
-    act_loss_heatmap(('loss', 'dev'))
-    hierarchical_performance_line(('loss', 'train'))
-    hierarchical_performance_heatmap(300)
+    # act_loss_heatmap(('loss', 'train'))
+    # act_loss_heatmap(('loss', 'dev'))
+    # hierarchical_performance_line(('loss', 'train'))
+    # hierarchical_performance_heatmap(300)

@@ -435,6 +435,15 @@ class Test:
         print('x PtoHtoE:', self.to_other_manifold(self.to_other_manifold(x, om=2, tm=1), om=1, tm=0).numpy())
         print('x PtoE:', self.to_other_manifold(x, om=2, tm=0).numpy())
 
+        print('测试线轴上相等的距离时,切空间距离差异:')
+        x = tf.Variable([[0.1, 0.9], [0.1, 0.9], [0., 0.9], [0., 0.9]])
+        y = tf.Variable([[-0.4, -0.7], [0., 0.999], [0., -0.693], [0., 0.999]])
+        self = Manifold(s=2)
+        print('测地线距离:\t', self.sqdist(x, y).numpy()[:, 0] ** 0.5)
+        xi1 = self.to_other_manifold(x, om=i, tm=0)
+        yi1 = self.to_other_manifold(y, om=i, tm=0)
+        print('作为双曲空间后的切空间距离:\t', self.sqdist(xi1, yi1, s=0).numpy()[:, 0] ** 0.5)
+
 
 if __name__ == '__main__':
     Manifold.test()

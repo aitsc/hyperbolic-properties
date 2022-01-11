@@ -64,7 +64,7 @@ class 随机树嵌入:
 
 exp_L = [
     (lambda norm, c=1: 1, 'Euclidean'),
-    (lambda norm, c=1: np.tanh(c ** 0.5 * norm) / norm / c ** 0.5, 'Poincare'),
+    (lambda norm, c=1: np.tanh(c ** 0.5 * norm) / norm / c ** 0.5, 'Poincaré'),
     (lambda norm, c=1: np.sinh(norm * c ** 0.5) / norm / c ** 0.5, 'Hyperboloid'),
 ]
 形状L = [True, False]
@@ -83,7 +83,7 @@ for j, 圆形 in enumerate(形状L):  # 圆形还是方形
             第几个图 = i + 1 + k * len(exp_L) + j * len(exp_L) * len(曲率L)
             plt.subplot(len(形状L) * len(曲率L), len(exp_L), 第几个图)
             if 第几个图 <= len(exp_L):
-                plt.title(w_obj[1])
+                plt.title(w_obj[1], fontsize=32)
             # plt.xlabel('$x_1$')
             # plt.ylabel('$x_2$')
             plt.axis('equal')

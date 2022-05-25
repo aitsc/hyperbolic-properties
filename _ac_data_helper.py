@@ -1149,6 +1149,8 @@ class MixedDataset(DataHelper):
         # 主任务辅助任务依赖的情况
         self._main_regular_cor_D = {  # {(dh1,dh2):getDataset返回参数中用于customTrainSet的参数,..}
             tuple(sorted([LinkPred.__name__, HypernymyRel.__name__])): 'train_edges_pos',
+            tuple(sorted([LinkPred.__name__, LinkPred.__name__])): 'train_edges_pos',
+            tuple(sorted([HypernymyRel.__name__, HypernymyRel.__name__])): 'train_edges_pos',
         }
         print(f'type: {self.data["type"]}; '
               f'generateDataset 特殊参数: '

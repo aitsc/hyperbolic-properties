@@ -2,8 +2,9 @@ import ast
 from _al_create_all_data import 数据生成任务
 from _af_train import *
 from _ak_sala2018comb import *
-from tanshicheng import TaskDB, get_logger
+from tsc_taskdb import TaskDB, get_logger
 from pprint import pformat
+from tsc_base import get_obj_sha512
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log')
 
@@ -214,7 +215,7 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
     """
     :param 初始参数D: dict;
     :param obj: 数据生成任务
-    :param mark_re_D: {'mark去重复re后用_拼接':这个mark的重复数量,..}; 用于重复mark标记
+    :param mark_re_D: {'mark去重复re后用_拼接'/paras的sha256:这个mark的重复数量,..}; 用于重复mark标记
     :param 允许重复mark: bool; 是否添加在mark_re_D中重复的mark
     :param 训练生成任务_obj: 训练生成任务, 用于获取参数模版
     :return:
@@ -232,8 +233,8 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
         'data_result': [['o3']],  # 默认 Animal
     }
     初始参数D_.update(初始参数D)
-    paras_f = lambda: 训练生成任务_obj.result['paras']  # 获取参数模版的方法
-    from_mark_get_result_f = lambda mark: sum([obj.que_tasks({'paras': {'mark': i}}) for i in mark], [])
+    def paras_f(): return 训练生成任务_obj.result['paras']  # 获取参数模版的方法
+    def from_mark_get_result_f(mark): return sum([obj.que_tasks({'paras': {'mark': i}}) for i in mark], [])
     初始参数D_['data_result'] = from_mark_get_result_f(初始参数D_['data_result'])
 
     def 构建简单任务(dh_L, layer, layerManifold, actM_L, manifold, dim, mixedType, dtype, task_weight, data_result):
@@ -266,14 +267,6 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
         paras['mark'] = [dh_L[0], layer, f'E{layerManifold}', f'A{actM_L}', f'D{manifold}', f'd{dim}',
                          f'mt{mixedType}', f'dt{dtype}', f'tw{task_weight}',
                          '-'.join(data_result['paras']['mark'] + data_result['paras']['mixed_tree'])]
-        mark = '_'.join(paras['mark'])
-        if mark in mark_re_D:
-            if not 允许重复mark:
-                return None
-            mark_re_D[mark] += 1
-        else:
-            mark_re_D[mark] = 1
-        paras['mark'].append(f're{mark_re_D[mark]}')  # 重复编号, 第一个就是 re1
         # 构建参数
         if layer == 'comb':
             paras['comb']['RG'] = data_result['data_path']['RG']
@@ -295,6 +288,16 @@ def 穷举构建简单任务方法(初始参数D, obj: 数据生成任务, mark_
         if dh_L[0] == 'Classification':  # NC任务数据集比例修改
             paras['dataParas']['devRate'] = 0.1
             paras['dataParas']['testRate'] = 0.6
+        # 重复检测
+        mark = '_'.join(paras['mark']) + str(dh_L)  # 加上这个额外变数
+        mark = get_obj_sha512(paras)[0]
+        if mark in mark_re_D:
+            if not 允许重复mark:
+                return None
+            mark_re_D[mark] += 1
+        else:
+            mark_re_D[mark] = 1
+        paras['mark'].append(f're{mark_re_D[mark]}')  # 重复编号, 第一个就是 re1
         return paras
 
     paras_L = []
@@ -369,7 +372,7 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
     #     'data_result': mark[:-4],
     # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # # 4个数字热力图: (3E流形*3A流形*3D流形)*4指标*GCN*2公开树*LP: 转流形 影响
+    # 4个数字热力图: (3E流形*3A流形*3D流形)*4指标*GCN*2公开树*LP: 转流形 影响
     paras_L_L.append(穷举构建简单任务方法({
         'manifold': [0, 1, 2],
         'layerManifold': [0, 1, 2],
@@ -380,18 +383,35 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
-    # # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN: 性能影响
-    # # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN
-    # paras_L_L.append(穷举构建简单任务方法({
-    #     'manifold': default_manifold_performance,
-    #     'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
-    #              ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
-    #     'mixedType': [0, 1, 2, 3, 9],
-    #     'task_weight': [0.9],
-    #     'dim': all_dim,
-    #     'data_result': open_mark,
-    #     'layer': default_layer,
-    # }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # 8个折线图: (4结合方式+不结合)*5指标*4任务*2公开树*Hyperboloid*GCN: 性能影响
+    # 2个热力图: 7指标*3metrics*4任务*2公开树*Hyperboloid*GCN
+    paras_L_L.append(穷举构建简单任务方法({
+        'manifold': default_manifold_performance,
+        'dh_L': [['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
+                 ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor']],
+        'mixedType': [0, 1, 2, 3, 9],
+        'task_weight': [0.9],
+        'dim': all_dim,
+        'data_result': open_mark,
+        'layer': default_layer,
+    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
+    # 220524: gat的结果, 3种结合任务, 不同的损失函数task_weight, 6144-2*4*4*8*2=5632
+    paras_L_L.append(穷举构建简单任务方法({
+        'manifold': [1, 2],
+        'dh_L': [
+            ['Classification', 'LinkPred'], ['LinkPred', 'LinkPred'],
+            ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'LinkPred'],
+            ['Classification', 'HypernymyRel'], ['LinkPred', 'HypernymyRel'],
+            ['GraphDistor', 'HypernymyRel'], ['HypernymyRel', 'HypernymyRel'],
+            ['Classification', 'GraphDistor'], ['LinkPred', 'GraphDistor'],
+            ['GraphDistor', 'GraphDistor'], ['HypernymyRel', 'GraphDistor'],
+        ],
+        'mixedType': [0, 1, 2, 3],
+        'task_weight': [0.5, 0.6, 0.7, 0.8, 0.9],
+        'dim': all_dim,
+        'data_result': open_mark,
+        'layer': ['gcn', 'gat'],
+    }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
 
     # 4个雷达图: (comb单树+Poincare*(单树+子树))*8子树*4指标*LP*GCN: 混合树图 影响
     mark = [['t5'], ['t5.1.1'], ['t5.1.2'], ['t5.1.3'], ['t5.1.4'], ['t5.2.1'], ['t5.2.2'], ['t5.2.3'], ['t5.2.4']]
@@ -443,15 +463,20 @@ if __name__ == '__main__':
             for paras_L in 构训练任务(obj, 数据生成任务_obj):
                 # raise
                 for paras in paras_L:
-                    tasks = obj.que_tasks({'paras': {'mark': paras['mark']}})
+                    dh_L = paras['trainParas']['dh_L']
+                    tasks = obj.que_tasks({'paras': {'mark': paras['mark'], 'trainParas': {'dh_L': dh_L}}})
                     if len(tasks) == 0:
                         info_L.append(paras)
                         print(f'\n准备增加第{更新任务}个任务, mark:', paras['mark'], end='')
                         更新任务 += 1
                     else:
                         print('.', end='')
-            print('\n一共更新任务数:')
-            print(len(obj.add_tasks(info_L)))
+            print(f'\n一共更新任务数 (预计{len(info_L)}):')
+            # raise
+            if info_L:
+                print(len(obj.add_tasks(info_L)))
+            else:
+                print(0)
     obj.clean()
     # obj.run_tasks(dataset_db_path=数据生成任务_obj.db_dir, query={'paras': {'mark': ['comb']}})
     print('=' * 10, '统计结果:')

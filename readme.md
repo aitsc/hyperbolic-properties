@@ -1,6 +1,7 @@
 
 ## 安装
 pip install -r requirements.txt
+pip install -r requirements2.txt  # 安装这个需要依赖其他, 不安装这个也能运行, 可能缺少一些功能, 例如 pygraphviz
 
 
 ## 说明

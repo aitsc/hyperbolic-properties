@@ -1,5 +1,5 @@
-# conda creat -n 3_hp python=3.8 && conda activate 3_hp
-tensorflow-gpu==2.2.0  # 2.4.0 可以, 达到 2.7.0 会产生错误 AttributeError: 'Functional' object has no attribute '_layers'
+# conda create -n 3_hp python=3.8 && conda activate 3_hp
+tensorflow-gpu==2.4.0  # 2.2.0 可以(以便于用cuda10), 达到 2.7.0 会产生错误 AttributeError: 'Functional' object has no attribute '_layers'
 numpy>=1.17.4
 scipy>=1.4.1
 tanshicheng>=0.3.23.2
@@ -15,3 +15,4 @@ pandas~=1.0.1
 statsmodels>=0.12.2
 tsc-base>=0.29
 tsc-taskdb>=0.4
+protobuf~=3.19.0  # 防止错误: _message.Message._CheckCalledFromGeneratedFile()  TypeError: Descriptors cannot not be created directly

@@ -203,6 +203,7 @@ tmp/
 ![^.]*.launch
 ![^.]*.setup
 !requirements.txt
+!requirements2.txt
 
 # 不排除的文件夹
 !.settings/

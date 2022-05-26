@@ -1,0 +1,2 @@
+# 不安装无法绘制模型图, 安装需要root执行: apt-get install graphviz libgraphviz-dev pkg-config
+pygraphviz>=1.6

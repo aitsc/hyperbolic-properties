@@ -110,9 +110,11 @@ if __name__ == '__main__':
     except:
         memory_limit = None
     try:  # 第2个参数是用查询过滤获取任务
-        query = sys.argv[2]
+        query = sys.argv[2]  # 例如 "[{'\$match': {'paras.mark': {'\$nin': ['mt0']}}}]"
     except:
         query = 'None'
+    print('memory_limit:', memory_limit)
+    print('query:', query)
 
     if TaskDBapi.request_api({}, url=api_url, try_times=2):
         run_task_train(

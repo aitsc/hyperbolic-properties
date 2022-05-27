@@ -1,7 +1,10 @@
 
-## 安装
-pip install -r requirements.txt
-pip install -r requirements2.txt  # 安装这个需要依赖其他, 不安装这个也能运行, 可能缺少一些功能, 例如 pygraphviz
+## 安装与运行
+- conda create -n 3_hp python=3.8 && conda activate 3_hp
+- pip install -r requirements.txt
+- pip install -r requirements2.txt  # 安装这个需要依赖其他, 不安装这个也能运行, 可能缺少一些功能, 例如 pygraphviz
+- 准备好: al_all_data, connect.txt, cuda
+- ta -t -a _ao_run_task_api.py
 
 
 ## 说明

@@ -1,4 +1,3 @@
-# conda create -n 3_hp python=3.8 && conda activate 3_hp
 tensorflow-gpu==2.4.0  # 2.2.0 可以(以便于用cuda10), 达到 2.7.0 会产生错误 AttributeError: 'Functional' object has no attribute '_layers'
 numpy>=1.17.4
 scipy>=1.4.1

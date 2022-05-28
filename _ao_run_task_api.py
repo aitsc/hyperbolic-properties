@@ -5,7 +5,7 @@ from _ak_sala2018comb import 自动评估绘图
 import os
 from pprint import pprint, pformat
 import time
-import sys
+import argparse
 
 logger = get_logger(f'log/{os.path.split(__file__)[1]}.log', mode='a')
 
@@ -98,31 +98,27 @@ def run_task_train(dataset_db_path, db_api, url, memory_limit=None, query='None'
 
 if __name__ == '__main__':
     db_api = 'am_all_train'  # 任务之间的 main_path 不能相同
-    # 读取参数
+    # 读取文件参数
     with open('connect.txt', 'r', encoding='utf8') as r:
         connect = ast.literal_eval(r.read().strip())
         mongo_url = connect['mongo_url']
         api_url = connect['api_url']
         api_passwd = connect['api_passwd']
-
-    try:  # 第1个参数是显存限制
-        memory_limit = float(sys.argv[1])
-    except:
-        memory_limit = None
-    try:  # 第2个参数是用查询过滤获取任务
-        query = sys.argv[2]  # 例如 "[{'\$match': {'paras.mark': {'\$nin': ['mt0']}}}]"
-    except:
-        query = 'None'
-    print('memory_limit:', memory_limit)
-    print('query:', query)
+    # 输入参数
+    parser = argparse.ArgumentParser(description='输入参数')
+    parser.add_argument('-m', default=None, help='显存限制 MB')  # 配置文件路径
+    parser.add_argument('-q', default='None', help='用查询过滤获取任务')  # 例如 "\"[{'\$match': {'paras.mark': {'\$nin': ['mt0']}}}]\""
+    args = parser.parse_args()
+    print('memory_limit:', args.m)
+    print('query:', args.q)
 
     if TaskDBapi.request_api({}, url=api_url, try_times=2):
         run_task_train(
             dataset_db_path='al_all_data',
             db_api=db_api,
             url=api_url,
-            memory_limit=memory_limit,
-            query=query,
+            memory_limit=args.m,
+            query=args.q,
             passwd=api_passwd,
         )
     else:

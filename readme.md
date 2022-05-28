@@ -5,6 +5,7 @@
 - pip install -r requirements2.txt  # 安装这个需要依赖其他, 不安装这个也能运行, 可能缺少一些功能, 例如 pygraphviz
 - 准备好: al_all_data, connect.txt, cuda
 - ta -t -a _ao_run_task_api.py
+- ta -t -o python -u _ao_run_task_api.py 40000 "\"[{'\$match': {'paras.mark': {'\$nin': ['mt0']}}}]\""  # 加约束的方式
 
 
 ## 说明

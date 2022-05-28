@@ -395,16 +395,22 @@ def 构训练任务(训练生成任务_obj: 训练生成任务, obj: 数据生�
         'data_result': open_mark,
         'layer': default_layer,
     }, obj, mark_re_D, 允许重复mark=允许重复mark, 训练生成任务_obj=训练生成任务_obj)[0])
-    # 220524: gat的结果, 3种结合任务, 不同的损失函数task_weight, 6144-2*4*4*8*2=5632
+    # 220524: gat的结果, 3种结合任务, 不同的损失函数task_weight, 2*9*4*8*2*2+2*9*4*8*4-2*4*4*8*2=4096
     paras_L_L.append(穷举构建简单任务方法({
         'manifold': [1, 2],
         'dh_L': [
-            ['Classification', 'LinkPred'], ['LinkPred', 'LinkPred'],
-            ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'LinkPred'],
-            ['Classification', 'HypernymyRel'], ['LinkPred', 'HypernymyRel'],
-            ['GraphDistor', 'HypernymyRel'], ['HypernymyRel', 'HypernymyRel'],
-            ['Classification', 'GraphDistor'], ['LinkPred', 'GraphDistor'],
-            ['GraphDistor', 'GraphDistor'], ['HypernymyRel', 'GraphDistor'],
+            ['Classification', 'LinkPred'],
+            ['Classification', 'HypernymyRel'],
+            ['Classification', 'GraphDistor'],
+            # ['LinkPred', 'LinkPred'],  # 一样的没有意义, 也会导致数据类型重复被覆盖
+            ['LinkPred', 'HypernymyRel'],
+            ['LinkPred', 'GraphDistor'],
+            # ['HypernymyRel', 'HypernymyRel'],
+            ['HypernymyRel', 'LinkPred'],
+            ['HypernymyRel', 'GraphDistor'],
+            # ['GraphDistor', 'GraphDistor'],
+            ['GraphDistor', 'LinkPred'],
+            ['GraphDistor', 'HypernymyRel'],
         ],
         'mixedType': [0, 1, 2, 3],
         'task_weight': [0.5, 0.6, 0.7, 0.8, 0.9],

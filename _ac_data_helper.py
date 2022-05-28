@@ -1185,7 +1185,7 @@ class MixedDataset(DataHelper):
         out = {'all_dh_name': []}  # 第一个数据集的名字是主任务数据集
         for dh in [self._main_task_dh, *self._regular_task_dh_L]:
             for k, v in dh.getDataset().items():
-                out[f'{dh.data["type"]}_{k}'] = v
+                out[f'{dh.data["type"]}_{k}'] = v  # 两个一样类型的数据会被覆盖, 可能导致后面loss混合的encoder输入错误
             out['all_dh_name'].append(dh.data["type"])
         # 防止一些非对应Decoder的方法抽取数据集失败, 比如 encoder.model(encoder.getData(dataset)). 20210318
         for k, v in self._main_task_dh.getDataset().items():

@@ -88,7 +88,11 @@ stat = [
     ]},
     # 7 联合任务预训练
     {'des': '4损失/3流形/8维度/5混合/2数据', 'sum': 4*3*8*5*2, '$and': [
-        {"paras.mark.0": {"$in": ["Classification", "LinkPred", "GraphDistor", "HypernymyRel"]}},
+        {"paras.trainParas.dh_L": {"$in": [
+            ['Classification', 'LinkPred'], ['LinkPred', 'GraphDistor'],
+            ['GraphDistor', 'LinkPred'], ['HypernymyRel', 'GraphDistor'],
+            ['Classification'], ['LinkPred'], ['GraphDistor'], ['HypernymyRel'],  # mt9
+        ]}},
         {"paras.mark.1": {"$in": ['gcn']}},
         {"$or": [
             {"paras.mark": {"$all": ['E0', 'A0', 'D0']}},
@@ -131,6 +135,43 @@ stat = [
         {"paras.mark.8": {"$in": ['tw1']}},
         {"paras.mark.9": {"$regex": '^(t5|t5\.[12]\.[1-4]-m1)$'}},
     ]},
+    # 10 联合任务预训练2
+    {'des': '9损失-辅助损失/2方法/2流形/8维度/8混合/2数据', 'sum': 9*2*2*8*8*2, '$and': [
+        {"paras.trainParas.dh_L": {"$in": [
+            ['Classification', 'LinkPred'],
+            ['Classification', 'HypernymyRel'],
+            ['Classification', 'GraphDistor'],
+            ['LinkPred', 'HypernymyRel'],
+            ['LinkPred', 'GraphDistor'],
+            ['HypernymyRel', 'LinkPred'],
+            ['HypernymyRel', 'GraphDistor'],
+            ['GraphDistor', 'LinkPred'],
+            ['GraphDistor', 'HypernymyRel'],
+        ]}},
+        {"paras.mark.1": {"$in": ['gcn', 'gat']}},
+        {"$or": [
+            {"paras.mark": {"$all": ['E1', 'A1', 'D1']}},
+            {"paras.mark": {"$all": ['E2', 'A2', 'D2']}},
+        ]},
+        {"paras.mark.5": {"$in": ['d2', 'd4', 'd6', 'd8', 'd10', 'd12', 'd14', 'd16']}},
+        {"paras.mark": {"$in": ['tw0.5', 'tw0.6', 'tw0.7', 'tw0.8', 'tw0.9', 'mt1', 'mt2', 'mt3']}},
+        {"paras.mark.7": {"$in": ['dt32']}},
+        {"paras.mark.9": {"$in": ['o2', 'o3']}},
+    ]},
+    # 12 联合任务预训练-主副任务相同
+    {'des': '1损失-辅助损失/1方法/1流形/1维度/3混合/2数据', 'sum': 3*2, '$and': [
+        {"paras.trainParas.dh_L": {"$in": [
+            ['LinkPred', 'LinkPred'],
+        ]}},
+        {"paras.mark.1": {"$in": ['gcn']}},
+        {"$or": [
+            {"paras.mark": {"$all": ['E1', 'A1', 'D1']}},
+        ]},
+        {"paras.mark.5": {"$in": ['d2']}},
+        {"paras.mark": {"$in": ['mt1', 'mt2', 'mt3']}},
+        {"paras.mark.7": {"$in": ['dt32']}},
+        {"paras.mark.9": {"$in": ['o2', 'o3']}},
+    ]},
     # 未执行任务
     {'des': '未执行任务', 'sum': 0, '$and': [
         {"executed": False},
@@ -148,8 +189,8 @@ for i, s in enumerate(stat):
         if 'executed' in j:
             have_executed = True
             break
-    if not have_executed:
-        s['$and'].append({"executed": True})
+    # if not have_executed:  # 只统计已执行的
+    #     s['$and'].append({"executed": True})
     print(f"{i+1} - {s['des']}, 预测数量: {s['sum']}")
     agg = [{"$match": {"$and": s['$and']}}, {'$project': {'_id': '$_id'}}]
     all_id = {j['_id'] for j in dbc.aggregate(agg)}
@@ -162,7 +203,7 @@ for i, s in enumerate(stat):
     each_id_L.append(all_id)
 
 # 统计每个部分之间的重合数量
-print('每个部分之间的重合数量[i,j,in_sum]:')
+print('\n第i和第j个部分之间的重合数量[i,j,in_sum]:')
 for i in range(len(each_id_L)):
     for j in range(i + 1, len(each_id_L)):
         in_sum = len(each_id_L[i] & each_id_L[j])
@@ -173,8 +214,8 @@ for i in range(len(each_id_L)):
 all_sum = list(dbc.aggregate([{'$count': 'count'}]))[0]['count']
 agg = [{"$match": {"$or": or_L}}, {'$count': 'count'}]
 or_sum = list(dbc.aggregate(agg))[0]['count']
-print(f'总统计数量: {or_sum}, 累计数量: {cumulative_sum}, 总重复数量: {cumulative_sum-or_sum}')
-print(f'数据库总数: {all_sum}, 剩余数量: {all_sum-or_sum}')
+print(
+    f'\n总统计数量/数据库总数: {or_sum}/{all_sum}, 未统计数量: {all_sum-or_sum}; 累计统计数量: {cumulative_sum}, 总重复数量: {cumulative_sum-or_sum}')
 if all_sum != or_sum:
     print('非统计结果的例子:')
     agg = [{"$match": {"$nor": or_L}}, {'$limit': 10}, {'$project': {'mark': '$paras.mark'}}]

@@ -27,8 +27,8 @@ def hierarchical_performance_ftest_task(best_result=('metric', 'dev')):
     
     # 多个子图的行列信息
     行s = [
-        {'mark': 'Classification', 'des': 'NC'},
-        {'mark': 'LinkPred', 'des': 'LP'},
+        {'mark': 'Classification', 'des': 'LR'},
+        {'mark': 'LinkPred', 'des': 'FD'},
         {'mark': 'GraphDistor', 'des': 'GD'},
         {'mark': 'HypernymyRel', 'des': 'HR'},
     ]
@@ -69,9 +69,9 @@ def hierarchical_performance_ftest_task(best_result=('metric', 'dev')):
             ['Classification', 'LinkPred'],  #
             ['Classification', 'HypernymyRel'],
             ['Classification', 'GraphDistor'],
-            ['LinkPred', 'HypernymyRel'],
+            # ['LinkPred', 'HypernymyRel'],
             ['LinkPred', 'GraphDistor'],  #
-            ['HypernymyRel', 'LinkPred'],
+            # ['HypernymyRel', 'LinkPred'],
             ['HypernymyRel', 'GraphDistor'],  #
             ['GraphDistor', 'LinkPred'],  #
             ['GraphDistor', 'HypernymyRel'],
@@ -129,7 +129,7 @@ def hierarchical_performance_ftest_task(best_result=('metric', 'dev')):
                 yticks=yticks,
                 xlabel='Rank',
                 alpha=0.05,
-                sub_title=f"({chr(i1 * len(列s) + i2 + 97)}) task={dh_L_0['des']}, {HRC_performance['des']}",
+                sub_title=f"({chr(i1 * len(列s) + i2 + 97)}) {dh_L_0['des']}, {HRC_performance['des']}",
                 sub_title_fs=13,
                 legend_fs=13,
                 xlabel_fs=13,
@@ -281,5 +281,5 @@ def hierarchical_performance_ftest_data(best_result=('metric', 'dev')):
 if __name__ == '__main__':
     no = 1
     hierarchical_performance_ftest_task(('metric', 'dev'))
-    hierarchical_performance_ftest_data(('metric', 'dev'))
+    # hierarchical_performance_ftest_data(('metric', 'dev'))
     

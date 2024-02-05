@@ -671,6 +671,7 @@ class 随机图:
             out['nx图边数量'] = 0
             g = nx.Graph()
             g.add_weighted_edges_from(self.树_统计所有点和边()[1] + list(self.triple))
+            print(len(g.edges))
         # 计算度信息
         degree = [i[1] for i in g.degree]
         degree_avg = sum(degree) / len(degree)
@@ -896,9 +897,9 @@ class 生成随机图:
 
 
 if __name__ == '__main__':
-    生成随机图.test()
-    raise
-    保存 = True
+    # 生成随机图.test()
+    # raise
+    保存 = False
 
     if 保存:
         n = 3280
@@ -936,7 +937,7 @@ if __name__ == '__main__':
         # print(f'{str(p)},  # IB:', round(sum(IB_L) / len(IB_L), 4), '; ID:', round(sum(ID_L) / len(ID_L), 4))
         # print(time.time() - t)
     else:
-        文件路径 = 'ab_不平衡多叉树;1;[1023];[23];[0.1706];[1.0021];1023;0.pkl'
+        文件路径 = 'al_all_data/o2;disease_nc;;1619842292.4762058/RG.pkl'
         图 = 随机图(文件路径)
-        图.绘图(按类别颜色画点=True)
+        # 图.绘图(按类别颜色画点=True)
         pprint(图.统计信息())

@@ -14,3 +14,17 @@ _an_all_result_draw.py: Early drawing.;
 _ap_all_result_draw2.py: Modify and add dimension average plotting, supporting two public datasets.;
 
 _aq_redraw.py: data Redraw visualization due to issues with displaying indicators;
+
+## Download
+Data, visualization charts, and complete experimental details download: https://pan.baidu.com/s/16olIfyZrwnBCdViYOk-mVQ?pwd=3djk
+
+## Citation
+```bibtex
+@article{tan2024why,
+  title = {Why are hyperbolic neural networks effective? A study on hierarchical representation capability},
+  author = {Tan, Shicheng and Zhao, Huanjing and Zhao, Shu and Zhang, Yanping},
+  journal = {arXiv},
+  year = {2024},
+  type = {Journal Article}
+}
+```
